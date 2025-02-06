@@ -18,7 +18,7 @@ const InvestmentCalculator = () => {
  useEffect(() => {
    const loadData = async () => {
      try {
-       const response = await fetch('/sp500-calculator/public/data/sp500_data.csv');
+       const response = await fetch('/sp500-calculator/data/sp500_data.csv');
        if (!response.ok) {
          throw new Error('Failed to load data');
        }
