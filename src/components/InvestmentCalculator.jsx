@@ -18,7 +18,8 @@ const InvestmentCalculator = () => {
   useEffect(() => {
     const loadData = async () => {
       try {
-        const response = await fetch('./public/data/sp500_data.csv');
+        // שינוי נתיב הקובץ לנתיב המלא ב-GitHub Pages
+        const response = await fetch('/sp500-calculator/public/data/sp500_data.csv');
         if (!response.ok) {
           throw new Error('Failed to load data');
         }
@@ -28,14 +29,17 @@ const InvestmentCalculator = () => {
           dynamicTyping: true,
           skipEmptyLines: true,
           complete: (results) => {
+            console.log('Data loaded:', results.data.length, 'rows');
             setSpData(results.data);
             setDataLoaded(true);
           },
           error: (error) => {
+            console.error('Parse error:', error);
             setError('Error parsing CSV: ' + error.message);
           }
         });
       } catch (error) {
+        console.error('Load error:', error);
         setError('Error loading data: ' + error.message);
       }
     };
