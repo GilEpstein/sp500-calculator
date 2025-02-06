@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
+import Papa from 'papaparse';
 
 const InvestmentCalculator = () => {
   const [birthDate, setBirthDate] = useState({
@@ -16,7 +18,7 @@ const InvestmentCalculator = () => {
   useEffect(() => {
     const loadData = async () => {
       try {
-        const response = await fetch('/data/sp500_data.csv');
+        const response = await fetch('/public/data/sp500_data.csv');
         if (!response.ok) {
           throw new Error('Failed to load data');
         }
@@ -79,7 +81,7 @@ const InvestmentCalculator = () => {
     }
 
     const currentValue = units * spData[spData.length-1].Closing;
-    const yearlyReturn = currentValue * 0.149; // חישוב תוספת שנתית בלבד
+    const yearlyReturn = currentValue * 0.149; // תוספת שנתית
     
     setResults({
       totalInvested,
@@ -114,16 +116,16 @@ const InvestmentCalculator = () => {
 
   return (
     <div className="p-6 max-w-5xl mx-auto bg-gradient-to-b from-blue-50 to-white" dir="rtl">
-      <div className="shadow-xl border-none rounded-2xl overflow-hidden bg-white">
-        <div className="bg-gradient-to-r from-blue-600 to-blue-400 text-white p-6">
-          <h1 className="text-3xl font-bold text-center mb-2">החסכון שנולד איתי</h1>
+      <Card className="shadow-xl border-none rounded-2xl overflow-hidden">
+        <CardHeader className="bg-gradient-to-r from-blue-600 to-blue-400 text-white p-6">
+          <CardTitle className="text-3xl font-bold text-center mb-2">החסכון שנולד איתי</CardTitle>
           <p className="text-sm opacity-90 text-center mb-1">
             גלה את פוטנציאל החסכון שהיה מצטבר מיום לידתך מבוסס על נתוני מדד S&P500
           </p>
           <p className="text-sm opacity-90 text-center">פרופ' גיל@</p>
-        </div>
+        </CardHeader>
         
-        <div className="p-8">
+        <CardContent className="p-8">
           <div className="space-y-8">
             <div className="grid grid-cols-4 gap-6">
               <div>
@@ -188,78 +190,90 @@ const InvestmentCalculator = () => {
                 </div>
                 
                 <div className="grid grid-cols-2 gap-6">
-                  <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg p-6">
-                    <h3 className="text-lg font-semibold text-blue-900 mb-2 text-center">
-                      סך הכל הושקע
-                    </h3>
-                    <p className="text-3xl font-bold text-blue-800 text-center">
-                      {formatCurrency(results.totalInvested)}
-                    </p>
-                  </div>
-                  <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-lg p-6">
-                    <h3 className="text-lg font-semibold text-green-900 mb-2 text-center">
-                      שווי נוכחי
-                    </h3>
-                    <p className="text-3xl font-bold text-green-800 text-center">
-                      {formatCurrency(results.currentValue)}
-                    </p>
-                  </div>
+                  <Card className="bg-gradient-to-br from-blue-50 to-blue-100 shadow-md hover:shadow-lg transition-shadow">
+                    <CardContent className="p-6">
+                      <h3 className="text-lg font-semibold text-blue-900 mb-2 text-center">
+                        סך הכל הושקע
+                      </h3>
+                      <p className="text-3xl font-bold text-blue-800 text-center">
+                        {formatCurrency(results.totalInvested)}
+                      </p>
+                    </CardContent>
+                  </Card>
+                  <Card className="bg-gradient-to-br from-green-50 to-green-100 shadow-md hover:shadow-lg transition-shadow">
+                    <CardContent className="p-6">
+                      <h3 className="text-lg font-semibold text-green-900 mb-2 text-center">
+                        שווי נוכחי
+                      </h3>
+                      <p className="text-3xl font-bold text-green-800 text-center">
+                        {formatCurrency(results.currentValue)}
+                      </p>
+                    </CardContent>
+                  </Card>
                 </div>
 
-                <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg p-6">
-                  <h3 className="text-lg font-semibold text-purple-900 mb-4 text-center">
-                    תוספת שנתית
-                  </h3>
-                  <p className="text-3xl font-bold text-purple-800 text-center">
-                    {formatCurrency(results.yearlyReturn)}
-                  </p>
-                </div>
+                <Card className="bg-gradient-to-br from-purple-50 to-purple-100 shadow-md hover:shadow-lg transition-shadow">
+                  <CardHeader>
+                    <CardTitle className="text-center text-purple-900">
+                      תוספת שנתית
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-6">
+                    <p className="text-3xl font-bold text-purple-800 text-center">
+                      {formatCurrency(results.yearlyReturn)}
+                    </p>
+                  </CardContent>
+                </Card>
 
-                <div className="bg-white rounded-lg shadow-md p-6">
-                  <h3 className="text-lg font-semibold mb-4 text-center">
-                    התפתחות ההשקעה לאורך זמן
-                  </h3>
-                  <div className="h-96">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <LineChart data={results.investmentData}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
-                        <XAxis dataKey="date" stroke="#6B7280" />
-                        <YAxis stroke="#6B7280" />
-                        <Tooltip
-                          formatter={(value) => formatCurrency(value)}
-                          contentStyle={{
-                            backgroundColor: 'rgba(255, 255, 255, 0.95)',
-                            borderRadius: '0.5rem',
-                            border: 'none',
-                            boxShadow: '0 2px 10px rgba(0, 0, 0, 0.1)'
-                          }}
-                        />
-                        <Legend />
-                        <Line
-                          type="monotone"
-                          dataKey="value"
-                          name="שווי תיק"
-                          stroke="#6366f1"
-                          strokeWidth={3}
-                          dot={false}
-                        />
-                        <Line
-                          type="monotone"
-                          dataKey="invested"
-                          name="סכום שהושקע"
-                          stroke="#22c55e"
-                          strokeWidth={3}
-                          dot={false}
-                        />
-                      </LineChart>
-                    </ResponsiveContainer>
-                  </div>
-                </div>
+                <Card className="shadow-md hover:shadow-lg transition-shadow">
+                  <CardHeader>
+                    <CardTitle className="text-center">
+                      התפתחות ההשקעה לאורך זמן
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-6">
+                    <div className="h-96">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <LineChart data={results.investmentData}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+                          <XAxis dataKey="date" stroke="#6B7280" />
+                          <YAxis stroke="#6B7280" />
+                          <Tooltip
+                            formatter={(value) => formatCurrency(value)}
+                            contentStyle={{
+                              backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                              borderRadius: '0.5rem',
+                              border: 'none',
+                              boxShadow: '0 2px 10px rgba(0, 0, 0, 0.1)'
+                            }}
+                          />
+                          <Legend />
+                          <Line
+                            type="monotone"
+                            dataKey="value"
+                            name="שווי תיק"
+                            stroke="#6366f1"
+                            strokeWidth={3}
+                            dot={false}
+                          />
+                          <Line
+                            type="monotone"
+                            dataKey="invested"
+                            name="סכום שהושקע"
+                            stroke="#22c55e"
+                            strokeWidth={3}
+                            dot={false}
+                          />
+                        </LineChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </CardContent>
+                </Card>
               </div>
             )}
           </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };
