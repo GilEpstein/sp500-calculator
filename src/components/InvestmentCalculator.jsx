@@ -126,7 +126,8 @@ const InvestmentCalculator = () => {
             גלה את פוטנציאל החסכון שהיה מצטבר מיום לידתך
             <br />
             חיסכון של 100$ בחודש
-            <br />
+          </p>
+          <p className="text-sm opacity-90 text-center mb-1">
             מבוסס על נתוני מדד S&P500
           </p>
           <p className="text-sm opacity-90 text-center" dir="rtl">@פרופ' גיל</p>
