@@ -123,9 +123,9 @@ const InvestmentCalculator = () => {
         <CardHeader className="bg-gradient-to-r from-blue-600 to-blue-400 text-white p-6">
           <CardTitle className="text-3xl font-bold text-center mb-2">החסכון שנולד איתי</CardTitle>
           <p className="text-sm opacity-90 text-center mb-1">
-            גלה את פוטנציאל החסכון שהיה מצטבר מיום לידתך,
+            גלה את פוטנציאל החסכון שהיה מצטבר מיום לידתך
             <br />
-            אילו היית חוסך 100$ בחודש
+            חיסכון של 100$ בחודש
             <br />
             מבוסס על נתוני מדד S&P500
           </p>
