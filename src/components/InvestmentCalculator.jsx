@@ -49,55 +49,57 @@ const InvestmentCalculator = () => {
       parseInt(birthDate.day)
     );
     
-    const currentDate = new Date(2025, 1, 1); // עד תחילת פברואר 2025
-    const diffTime = currentDate - birthDateObj;
-    const days = diffTime / (1000 * 60 * 60 * 24);
-    const totalMonths = Math.floor(days / 30.4375) + 1; // +1 עבור ינואר 2025
     const monthlyInvestment = 100;
-    const totalInvested = totalMonths * monthlyInvestment;
-    
-    let units = 0;
-    
-    // חישוב המניות שנקנו בכל חודש
-    let currentCalcDate = new Date(birthDateObj);
+    let totalUnits = 0;
+    let totalInvested = 0;
     let prevMonth = null;
+    const investmentData = [];
     
-    while (currentCalcDate <= currentDate) {
-      const yearMonth = `${currentCalcDate.getFullYear()}-${currentCalcDate.getMonth() + 1}`;
+    // עוברים על כל הנתונים ההיסטוריים
+    for (const row of spData) {
+      if (!row.Month || !row.Closing) continue;
       
-      if (yearMonth !== prevMonth) {
-        // מחפשים את המחיר הקרוב ביותר לתאריך הנוכחי
-        const priceData = spData.find(row => {
-          const [day, month, year] = row.Month.split('/');
-          return parseInt(year) === currentCalcDate.getFullYear() && 
-                 parseInt(month) === (currentCalcDate.getMonth() + 1);
+      const [day, month, year] = row.Month.split('/');
+      const monthDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+      const yearMonth = `${year}-${month}`;
+      
+      // קונים מניות רק אם:
+      // 1. התאריך אחרי תאריך הלידה
+      // 2. עוד לא קנינו בחודש הזה
+      if (monthDate >= birthDateObj && yearMonth !== prevMonth) {
+        // קונים מניות ב-100 דולר לפי השער של אותו חודש
+        const unitsThisMonth = monthlyInvestment / row.Closing;
+        totalUnits += unitsThisMonth;
+        totalInvested += monthlyInvestment;
+        
+        investmentData.push({
+          date: yearMonth,
+          units: totalUnits,
+          monthlyUnits: unitsThisMonth,
+          value: totalUnits * row.Closing,
+          invested: totalInvested,
+          price: row.Closing
         });
         
-        if (priceData) {
-          const newUnits = monthlyInvestment / priceData.Closing;
-          units += newUnits;
-          prevMonth = yearMonth;
-        }
+        prevMonth = yearMonth;
       }
-      
-      currentCalcDate.setMonth(currentCalcDate.getMonth() + 1);
     }
     
-    // חישוב שווי נוכחי
+    // חישוב שווי נוכחי לפי המחיר האחרון
     const lastPrice = spData[spData.length - 1].Closing;
-    const currentValue = units * lastPrice;
-
-    console.log('Total months:', totalMonths);
-    console.log('Total invested:', totalInvested);
-    console.log('Total units:', units);
+    const currentValue = totalUnits * lastPrice;
+    
+    console.log('Total units accumulated:', totalUnits);
     console.log('Last price:', lastPrice);
+    console.log('Total invested:', totalInvested);
     console.log('Current value:', currentValue);
     
     setResults({
-      totalMonths,
       totalInvested,
-      units,
       currentValue,
+      totalUnits,
+      lastPrice,
+      investmentData,
       latestDate: spData[spData.length - 1].Month
     });
   };
@@ -194,6 +196,9 @@ const InvestmentCalculator = () => {
                       <p className="text-3xl font-bold text-blue-800 text-center">
                         {formatCurrency(results.totalInvested)}
                       </p>
+                      <p className="text-sm text-blue-600 text-center mt-2">
+                        סה"כ יחידות: {results.totalUnits.toFixed(2)}
+                      </p>
                     </CardContent>
                   </Card>
                   
@@ -204,6 +209,9 @@ const InvestmentCalculator = () => {
                       </h3>
                       <p className="text-3xl font-bold text-green-800 text-center">
                         {formatCurrency(results.currentValue)}
+                      </p>
+                      <p className="text-sm text-green-600 text-center mt-2">
+                        מחיר אחרון: {formatCurrency(results.lastPrice)}
                       </p>
                     </CardContent>
                   </Card>
