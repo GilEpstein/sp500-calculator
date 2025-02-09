@@ -115,6 +115,8 @@ const InvestmentCalculator = () => {
     const diffTime = lastDate - birthDateObj;
     const currentAgeInMonths = Math.floor(diffTime / (1000 * 60 * 60 * 24 * 30.4375));
     const currentAge = currentAgeInMonths / 12;
+    
+    console.log('Current Age:', currentAge, 'Retirement Age:', retirementAge);
 
     const baseResults = {
       ...currentInvestment,
@@ -125,8 +127,8 @@ const InvestmentCalculator = () => {
       }))
     };
 
-    // Only calculate future values if retirement age is provided and greater than current age
-    if (retirementAge && retirementAge > currentAge) {
+    // Only calculate future values if retirement age is strictly greater than current age
+    if (retirementAge > currentAge) {
       const retirementAgeInMonths = retirementAge * 12;
       const monthsToRetirement = retirementAgeInMonths - currentAgeInMonths;
       const yearsToRetirement = Math.floor(monthsToRetirement / 12);
