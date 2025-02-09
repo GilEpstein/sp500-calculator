@@ -65,6 +65,7 @@ const InvestmentCalculator = () => {
     const investmentData = [];
     let latestDate = '';
     
+    // חישוב ההשקעה עד היום - לא תלוי בגיל פרישה
     for (const row of spData) {
       if (!row.Month || !row.Closing) continue;
       
@@ -89,16 +90,20 @@ const InvestmentCalculator = () => {
 
     const currentValue = units * spData[spData.length-1].Closing;
     
-    // Calculate years until retirement
+    // חישוב שנים עד פרישה
     const birthYear = parseInt(birthDate.year);
     const currentAge = today.getFullYear() - birthYear;
-    const yearsToRetirement = retirementAge - currentAge;
+    const yearsToRetirement = Math.max(0, retirementAge - currentAge);
     
-    // Calculate future values based on different scenarios
-    const futureValues = {
+    // חישוב תחזיות עתידיות רק אם יש שנים עד לפרישה
+    const futureValues = yearsToRetirement > 0 ? {
       scenario1: calculateFutureValue(currentValue, yearsToRetirement, 0.0927),
       scenario2: calculateFutureValue(currentValue, yearsToRetirement, 0.1243),
       scenario3: calculateFutureValue(currentValue, yearsToRetirement, 0.149)
+    } : {
+      scenario1: currentValue,
+      scenario2: currentValue,
+      scenario3: currentValue
     };
     
     setResults({
@@ -237,10 +242,10 @@ const InvestmentCalculator = () => {
                   </Card>
                 </div>
 
-                {results.yearsToRetirement > 0 && (
+                {results.yearsToRetirement >= 0 && (
                   <div>
                     <div className="text-center text-xl font-semibold text-gray-800 mb-4">
-                      תחזית לגיל {retirementAge} (בעוד {results.yearsToRetirement} שנים)
+                      תחזית לגיל {retirementAge} {results.yearsToRetirement > 0 ? `(בעוד ${results.yearsToRetirement} שנים)` : ''}
                     </div>
                     <div className="text-center text-sm text-gray-600 mb-6">
                       בהתבסס על הערך הנוכחי של התיק וממוצעי התשואה ההיסטוריים
