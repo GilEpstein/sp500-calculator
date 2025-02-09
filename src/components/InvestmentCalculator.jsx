@@ -58,7 +58,6 @@ const InvestmentCalculator = () => {
     const investmentData = [];
     let units = 0;
     
-    // Calculate investment data for each month
     for (const row of spData) {
       if (!row.Month || !row.Closing) continue;
       
@@ -66,35 +65,36 @@ const InvestmentCalculator = () => {
       const monthDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
       
       if (monthDate >= birthDateObj && monthDate <= lastDate) {
+        // Add monthly investment
         const newUnits = monthlyInvestment / row.Closing;
         units += newUnits;
         
+        // Calculate value for this month
+        const currentValue = units * row.Closing;
+        const totalInvested = monthlyInvestment * (investmentData.length + 1);
+        
         investmentData.push({
           date: `${year}-${month}`,
-          value: units * row.Closing,
-          invested: monthlyInvestment * (investmentData.length + 1)
+          value: currentValue,
+          invested: totalInvested
         });
       }
     }
 
-    // Calculate final values
-    const totalInvested = monthlyInvestment * investmentData.length;
-    const currentValue = units * lastDataRow.Closing;
-
-    console.log('Total Invested:', totalInvested);
-    console.log('Current Value:', currentValue);
-    console.log('Total Units:', units);
-    
-    setResults({
-      totalInvested,
-      currentValue,
-      investmentData: investmentData.map(item => ({
-        ...item,
-        value: Math.round(item.value),
-        invested: Math.round(item.invested)
-      })),
-      latestDate: lastDataRow.Month
-    });
+    // Set final results
+    if (investmentData.length > 0) {
+      const finalData = investmentData[investmentData.length - 1];
+      setResults({
+        totalInvested: finalData.invested,
+        currentValue: finalData.value,
+        investmentData: investmentData.map(item => ({
+          ...item,
+          value: Math.round(item.value),
+          invested: Math.round(item.invested)
+        })),
+        latestDate: lastDataRow.Month
+      });
+    }
   };
 
   const handleDateChange = (field, value) => {
