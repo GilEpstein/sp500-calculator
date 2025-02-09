@@ -11,8 +11,6 @@ const InvestmentCalculator = () => {
   });
   const [spData, setSpData] = useState([]);
   const [results, setResults] = useState(null);
-  const [retirementAge, setRetirementAge] = useState(67);
-  const [dataLoaded, setDataLoaded] = useState(false);
   const [error, setError] = useState(null);
   
   useEffect(() => {
@@ -29,7 +27,6 @@ const InvestmentCalculator = () => {
           skipEmptyLines: true,
           complete: (results) => {
             setSpData(results.data);
-            setDataLoaded(true);
           },
           error: (error) => {
             console.error('Parse error:', error);
@@ -44,30 +41,24 @@ const InvestmentCalculator = () => {
     loadData();
   }, []);
 
-  const calculateFutureValue = (presentValue, years, annualReturn) => {
-    return presentValue * Math.pow(1 + annualReturn, years);
-  };
+  const calculateInvestment = () => {
+    if (!birthDate.year || !spData.length) return;
 
-  const calculateCurrentInvestment = (birthDateObj) => {
-    if (!spData.length) return null;
+    const birthDateObj = new Date(
+      parseInt(birthDate.year), 
+      parseInt(birthDate.month) - 1, 
+      parseInt(birthDate.day)
+    );
     
     const lastDataRow = spData[spData.length - 1];
     const [lastDay, lastMonth, lastYear] = lastDataRow.Month.split('/');
     const lastDate = new Date(parseInt(lastYear), parseInt(lastMonth) - 1, parseInt(lastDay));
     
     const monthlyInvestment = 100;
-    let totalMonths = 0;
-    let currentDate = new Date(birthDateObj);
-    
-    while (currentDate <= lastDate) {
-      totalMonths++;
-      currentDate.setMonth(currentDate.getMonth() + 1);
-    }
-    
-    const totalInvested = totalMonths * monthlyInvestment;
-    let units = 0;
     const investmentData = [];
+    let units = 0;
     
+    // Calculate investment data for each month
     for (const row of spData) {
       if (!row.Month || !row.Closing) continue;
       
@@ -78,83 +69,32 @@ const InvestmentCalculator = () => {
         const newUnits = monthlyInvestment / row.Closing;
         units += newUnits;
         
-        const currentValue = units * row.Closing;
         investmentData.push({
           date: `${year}-${month}`,
-          value: currentValue,
+          value: units * row.Closing,
           invested: monthlyInvestment * (investmentData.length + 1)
         });
       }
     }
 
+    // Calculate final values
+    const totalInvested = monthlyInvestment * investmentData.length;
     const currentValue = units * lastDataRow.Closing;
+
+    console.log('Total Invested:', totalInvested);
+    console.log('Current Value:', currentValue);
+    console.log('Total Units:', units);
     
-    return {
+    setResults({
       totalInvested,
       currentValue,
-      investmentData,
-      latestDate: lastDataRow.Month
-    };
-  };
-
-  const calculateInvestment = () => {
-    if (!birthDate.year || !spData.length) return;
-
-    const birthDateObj = new Date(
-      parseInt(birthDate.year), 
-      parseInt(birthDate.month) - 1, 
-      parseInt(birthDate.day)
-    );
-    
-    const currentInvestment = calculateCurrentInvestment(birthDateObj);
-    if (!currentInvestment) return;
-
-    const lastDataRow = spData[spData.length - 1];
-    const [lastDay, lastMonth, lastYear] = lastDataRow.Month.split('/');
-    const lastDate = new Date(parseInt(lastYear), parseInt(lastMonth) - 1, parseInt(lastDay));
-    const diffTime = lastDate - birthDateObj;
-    const currentAgeInMonths = Math.floor(diffTime / (1000 * 60 * 60 * 24 * 30.4375));
-    const currentAge = currentAgeInMonths / 12;
-
-    const baseResults = {
-      ...currentInvestment,
-      investmentData: currentInvestment.investmentData.map(item => ({
+      investmentData: investmentData.map(item => ({
         ...item,
         value: Math.round(item.value),
         invested: Math.round(item.invested)
-      }))
-    };
-
-    // Calculate future values only if retirement age is greater than current age
-    if (retirementAge > currentAge) {
-      // Calculate total months to retirement
-      const monthsToRetirement = (retirementAge * 12) - currentAgeInMonths;
-      
-      // Calculate complete years and remaining months
-      const completeYears = Math.floor(monthsToRetirement / 12);
-      const remainingMonths = monthsToRetirement % 12;
-      
-      // For the future value calculation, we need the total time in years (including partial years)
-      const totalYearsToRetirement = monthsToRetirement / 12;
-      
-      console.log(`Current Age: ${currentAge}, Complete Years: ${completeYears}, Remaining Months: ${remainingMonths}`);
-      console.log(`Total Years (for calculation): ${totalYearsToRetirement}`);
-      
-      const futureValues = {
-        scenario1: calculateFutureValue(currentInvestment.currentValue, totalYearsToRetirement, 0.0927),
-        scenario2: calculateFutureValue(currentInvestment.currentValue, totalYearsToRetirement, 0.1243),
-        scenario3: calculateFutureValue(currentInvestment.currentValue, totalYearsToRetirement, 0.149)
-      };
-
-      setResults({
-        ...baseResults,
-        yearsToRetirement: completeYears,
-        monthsToRetirement: remainingMonths,
-        futureValues
-      });
-    } else {
-      setResults(baseResults);
-    }
+      })),
+      latestDate: lastDataRow.Month
+    });
   };
 
   const handleDateChange = (field, value) => {
@@ -162,7 +102,6 @@ const InvestmentCalculator = () => {
       ...prev,
       [field]: value
     }));
-    
     setTimeout(calculateInvestment, 0);
   };
 
@@ -193,7 +132,7 @@ const InvestmentCalculator = () => {
         
         <CardContent className="p-8">
           <div className="space-y-8">
-            <div className="grid grid-cols-4 gap-6">
+            <div className="grid grid-cols-3 gap-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">יום</label>
                 <input
@@ -225,20 +164,6 @@ const InvestmentCalculator = () => {
                   max="2024"
                   value={birthDate.year}
                   onChange={(e) => handleDateChange('year', e.target.value)}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">גיל פרישה</label>
-                <input
-                  type="number"
-                  className="w-full border-2 border-gray-200 rounded-lg px-4 py-2"
-                  value={retirementAge}
-                  onChange={(e) => {
-                    setRetirementAge(Number(e.target.value));
-                    setTimeout(calculateInvestment, 0);
-                  }}
-                  min="0"
-                  max="120"
                 />
               </div>
             </div>
@@ -278,72 +203,6 @@ const InvestmentCalculator = () => {
                     </CardContent>
                   </Card>
                 </div>
-
-                {results.futureValues && (
-                  <div>
-                    <div className="text-center text-xl font-semibold text-gray-800 mb-4">
-                      תחזית לגיל {retirementAge} 
-                      {results.yearsToRetirement > 0 || results.monthsToRetirement > 0 ? 
-                        ` (בעוד ${results.yearsToRetirement > 0 ? `${results.yearsToRetirement} שנים` : ''}${
-                          results.yearsToRetirement > 0 && results.monthsToRetirement > 0 ? ' ו-' : ''
-                        }${results.monthsToRetirement > 0 ? `${results.monthsToRetirement} חודשים` : ''})` 
-                        : ''
-                      }
-                    </div>
-                    <div className="text-center text-sm text-gray-600 mb-6">
-                      בהתבסס על הערך הנוכחי של התיק וממוצעי התשואה ההיסטוריים
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                      <Card className="bg-gradient-to-br from-orange-50 to-orange-100 shadow-md hover:shadow-lg transition-shadow">
-                        <CardContent className="p-6">
-                          <h3 className="text-base font-semibold text-orange-900 mb-2 text-center">
-                            תחזית שמרנית
-                            <div className="text-sm text-orange-700">
-                              לפי ממוצע 20 השנים האחרונות
-                              <br />
-                              תשואה שנתית: 9.27%
-                            </div>
-                          </h3>
-                          <p className="text-2xl font-bold text-orange-800 text-center mt-4">
-                            {formatCurrency(results.futureValues.scenario1)}
-                          </p>
-                        </CardContent>
-                      </Card>
-
-                      <Card className="bg-gradient-to-br from-orange-50 to-orange-100 shadow-md hover:shadow-lg transition-shadow">
-                        <CardContent className="p-6">
-                          <h3 className="text-base font-semibold text-orange-900 mb-2 text-center">
-                            תחזית מאוזנת
-                            <div className="text-sm text-orange-700">
-                              לפי ממוצע 10 השנים האחרונות
-                              <br />
-                              תשואה שנתית: 12.43%
-                            </div>
-                          </h3>
-                          <p className="text-2xl font-bold text-orange-800 text-center mt-4">
-                            {formatCurrency(results.futureValues.scenario2)}
-                          </p>
-                        </CardContent>
-                      </Card>
-
-                     <Card className="bg-gradient-to-br from-orange-50 to-orange-100 shadow-md hover:shadow-lg transition-shadow">
-                        <CardContent className="p-6">
-                          <h3 className="text-base font-semibold text-orange-900 mb-2 text-center">
-                            תחזית אופטימית
-                            <div className="text-sm text-orange-700">
-                              לפי ממוצע 5 השנים האחרונות
-                              <br />
-                              תשואה שנתית: 14.9%
-                            </div>
-                          </h3>
-                          <p className="text-2xl font-bold text-orange-800 text-center mt-4">
-                            {formatCurrency(results.futureValues.scenario3)}
-                          </p>
-                        </CardContent>
-                      </Card>
-                    </div>
-                  </div>
-                )}
 
                 <Card className="shadow-md hover:shadow-lg transition-shadow">
                   <CardHeader>
