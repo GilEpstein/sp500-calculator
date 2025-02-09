@@ -60,12 +60,17 @@ const InvestmentCalculator = () => {
     const today = new Date('2025-01-01');
     const monthlyInvestment = 100;
     
+    // חישוב מדויק של מספר החודשים
+    const monthsDiff = (today.getFullYear() - birthDateObj.getFullYear()) * 12 + 
+                      (today.getMonth() - birthDateObj.getMonth());
+    const totalMonths = monthsDiff + (today.getDate() >= birthDateObj.getDate() ? 0 : -1);
+    
     let units = 0;
-    let totalInvested = 0;
+    let totalInvested = totalMonths * monthlyInvestment; // חישוב ישיר של סך ההשקעה
     const investmentData = [];
     let latestDate = '';
     
-    // חישוב ההשקעה עד היום - לא תלוי בגיל פרישה
+    // חישוב היחידות והערך הנוכחי
     for (const row of spData) {
       if (!row.Month || !row.Closing) continue;
       
@@ -75,35 +80,35 @@ const InvestmentCalculator = () => {
       if (monthDate >= birthDateObj && monthDate <= today) {
         const newUnits = monthlyInvestment / row.Closing;
         units += newUnits;
-        totalInvested += monthlyInvestment;
-        latestDate = row.Month;
         
         const currentValue = units * row.Closing;
+        latestDate = row.Month;
         
         investmentData.push({
           date: `${year}-${month}`,
           value: currentValue,
-          invested: totalInvested
+          invested: monthlyInvestment * investmentData.length
         });
       }
     }
 
     const currentValue = units * spData[spData.length-1].Closing;
     
-    // חישוב שנים עד פרישה
-    const birthYear = parseInt(birthDate.year);
-    const currentAge = today.getFullYear() - birthYear;
-    const yearsToRetirement = Math.max(0, retirementAge - currentAge);
+    // חישוב מדויק של שנים ועודף חודשים עד גיל פרישה
+    const retirementDate = new Date(birthDateObj);
+    retirementDate.setFullYear(birthDateObj.getFullYear() + retirementAge);
     
-    // חישוב תחזיות עתידיות רק אם יש שנים עד לפרישה
-    const futureValues = yearsToRetirement > 0 ? {
+    const yearsToRetirement = Math.max(0, 
+      (retirementDate.getFullYear() - today.getFullYear()) +
+      (retirementDate.getMonth() - today.getMonth()) / 12 +
+      (retirementDate.getDate() - today.getDate()) / 365.25
+    );
+    
+    // חישוב תחזיות עתידיות
+    const futureValues = {
       scenario1: calculateFutureValue(currentValue, yearsToRetirement, 0.0927),
       scenario2: calculateFutureValue(currentValue, yearsToRetirement, 0.1243),
       scenario3: calculateFutureValue(currentValue, yearsToRetirement, 0.149)
-    } : {
-      scenario1: currentValue,
-      scenario2: currentValue,
-      scenario3: currentValue
     };
     
     setResults({
@@ -245,7 +250,7 @@ const InvestmentCalculator = () => {
                 {results.yearsToRetirement >= 0 && (
                   <div>
                     <div className="text-center text-xl font-semibold text-gray-800 mb-4">
-                      תחזית לגיל {retirementAge} {results.yearsToRetirement > 0 ? `(בעוד ${results.yearsToRetirement} שנים)` : ''}
+                      תחזית לגיל {retirementAge} {results.yearsToRetirement > 0 ? `(בעוד ${Math.floor(results.yearsToRetirement)} שנים ו-${Math.round((results.yearsToRetirement % 1) * 12)} חודשים)` : ''}
                     </div>
                     <div className="text-center text-sm text-gray-600 mb-6">
                       בהתבסס על הערך הנוכחי של התיק וממוצעי התשואה ההיסטוריים
@@ -317,7 +322,7 @@ const InvestmentCalculator = () => {
                           <YAxis stroke="#6B7280" />
                           <Tooltip
                             formatter={(value) => formatCurrency(value)}
-                            contentStyle={{
+                           contentStyle={{
                               backgroundColor: 'rgba(255, 255, 255, 0.95)',
                               borderRadius: '0.5rem',
                               border: 'none',
