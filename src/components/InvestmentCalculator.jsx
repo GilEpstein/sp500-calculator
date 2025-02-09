@@ -45,18 +45,24 @@ const InvestmentCalculator = () => {
   }, []);
 
   const calculateFutureValue = (presentValue, yearsToRetirement, annualReturn) => {
+    if (yearsToRetirement <= 0) {
+      return presentValue;
+    }
     return presentValue * Math.pow(1 + annualReturn, yearsToRetirement);
   };
 
   const calculateCurrentInvestment = (birthDateObj) => {
-    const today = new Date('2025-01-01');
-    const monthlyInvestment = 100;
+    // מציאת התאריך האחרון בנתונים
+    const lastDataRow = spData[spData.length - 1];
+    const [lastDay, lastMonth, lastYear] = lastDataRow.Month.split('/');
+    const lastDate = new Date(parseInt(lastYear), parseInt(lastMonth) - 1, parseInt(lastDay));
     
-    // חישוב מדויק של מספר החודשים
+    const monthlyInvestment = 100;
     let totalMonths = 0;
     let currentDate = new Date(birthDateObj);
     
-    while (currentDate <= today) {
+    // חישוב עד התאריך האחרון בנתונים
+    while (currentDate <= lastDate) {
       totalMonths++;
       currentDate.setMonth(currentDate.getMonth() + 1);
     }
@@ -64,19 +70,17 @@ const InvestmentCalculator = () => {
     const totalInvested = totalMonths * monthlyInvestment;
     let units = 0;
     const investmentData = [];
-    let latestDate = '';
     
-    // חישוב היחידות והערך הנוכחי (תמיד עד סוף 2024)
+    // חישוב היחידות והערך הנוכחי
     for (const row of spData) {
       if (!row.Month || !row.Closing) continue;
       
       const [day, month, year] = row.Month.split('/');
       const monthDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
       
-      if (monthDate >= birthDateObj && monthDate <= today) {
+      if (monthDate >= birthDateObj && monthDate <= lastDate) {
         const newUnits = monthlyInvestment / row.Closing;
         units += newUnits;
-        latestDate = row.Month;
         
         const currentValue = units * row.Closing;
         investmentData.push({
@@ -87,13 +91,13 @@ const InvestmentCalculator = () => {
       }
     }
 
-    const currentValue = units * spData[spData.length-1].Closing;
+    const currentValue = units * lastDataRow.Closing;
     
     return {
       totalInvested,
       currentValue,
       investmentData,
-      latestDate
+      latestDate: lastDataRow.Month
     };
   };
 
@@ -106,13 +110,22 @@ const InvestmentCalculator = () => {
       parseInt(birthDate.day)
     );
     
-    // חישוב ערך נוכחי - לא תלוי בגיל פרישה
+    // חישוב ערך נוכחי
     const currentInvestment = calculateCurrentInvestment(birthDateObj);
     
-    // חישוב שנים לפנסיה - רק עבור התחזיות
-    const today = new Date('2025-01-01');
-    const currentAge = today.getFullYear() - birthDateObj.getFullYear();
-    const yearsToRetirement = Math.max(0, retirementAge - currentAge);
+    // מציאת התאריך האחרון בנתונים
+    const lastDataRow = spData[spData.length - 1];
+    const [lastDay, lastMonth, lastYear] = lastDataRow.Month.split('/');
+    const lastDate = new Date(parseInt(lastYear), parseInt(lastMonth) - 1, parseInt(lastDay));
+    
+    // חישוב שנים לפנסיה
+    const retirementDate = new Date(
+      birthDateObj.getFullYear() + retirementAge,
+      birthDateObj.getMonth(),
+      birthDateObj.getDate()
+    );
+    
+    const yearsToRetirement = (retirementDate - lastDate) / (1000 * 60 * 60 * 24 * 365.25);
     
     // חישוב תחזיות עתידיות
     const futureValues = {
@@ -150,7 +163,8 @@ const InvestmentCalculator = () => {
       maximumFractionDigits: 0
     }).format(Math.round(value));
   };
-return (
+
+  return (
     <div className="p-6 max-w-5xl mx-auto bg-gradient-to-b from-blue-50 to-white" dir="rtl">
       <Card className="shadow-xl border-none rounded-2xl overflow-hidden">
         <CardHeader className="bg-gradient-to-r from-blue-600 to-blue-400 text-white p-6">
@@ -334,7 +348,7 @@ return (
                               borderRadius: '0.5rem',
                               border: 'none',
                               boxShadow: '0 2px 10px rgba(0, 0, 0, 0.1)'
-}}
+                            }}
                           />
                           <Legend />
                           <Line
