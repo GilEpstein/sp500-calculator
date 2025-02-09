@@ -329,50 +329,41 @@ const InvestmentCalculator = () => {
                   <CardContent className="p-6">
                     <div className="h-96">
                       <ResponsiveContainer width="100%" height="100%">
-<Card className="shadow-md hover:shadow-lg transition-shadow">
-  <CardHeader>
-    <CardTitle className="text-center">
-      התפתחות ההשקעה לאורך זמן
-    </CardTitle>
-  </CardHeader>
-  <CardContent className="p-6">
-    <div className="h-96">
-      <ResponsiveContainer width="100%" height="100%">
-        <LineChart data={results.investmentData}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
-          <XAxis dataKey="date" stroke="#6B7280" />
-          <YAxis stroke="#6B7280" />
-          <Tooltip
-            formatter={(value) => formatCurrency(value)}
-            contentStyle={{
-              backgroundColor: 'rgba(255, 255, 255, 0.95)',
-              borderRadius: '0.5rem',
-              border: 'none',
-              boxShadow: '0 2px 10px rgba(0, 0, 0, 0.1)'
-            }}
-          />
-          <Legend />
-          <Line
-            type="monotone"
-            dataKey="value"
-            name="שווי תיק"
-            stroke="#6366f1"
-            strokeWidth={3}
-            dot={false}
-          />
-          <Line
-            type="monotone"
-            dataKey="invested"
-            name="סכום שהושקע"
-            stroke="#22c55e"
-            strokeWidth={3}
-            dot={false}
-          />
-        </LineChart>
-      </ResponsiveContainer>
-    </div>
-  </CardContent>
-</Card>
+                        <LineChart data={results.investmentData}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+                          <XAxis dataKey="date" stroke="#6B7280" />
+                          <YAxis stroke="#6B7280" />
+                          <Tooltip
+                            formatter={(value) => formatCurrency(value)}
+                            contentStyle={{
+                              backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                              borderRadius: '0.5rem',
+                              border: 'none',
+                              boxShadow: '0 2px 10px rgba(0, 0, 0, 0.1)'
+                            }}
+                          />
+                          <Legend />
+                          <Line
+                            type="monotone"
+                            dataKey="value"
+                            name="שווי תיק"
+                            stroke="#6366f1"
+                            strokeWidth={3}
+                            dot={false}
+                          />
+                          <Line
+                            type="monotone"
+                            dataKey="invested"
+                            name="סכום שהושקע"
+                            stroke="#22c55e"
+                            strokeWidth={3}
+                            dot={false}
+                          />
+                        </LineChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </CardContent>
+                </Card>
               </div>
             )}
           </div>
@@ -380,6 +371,6 @@ const InvestmentCalculator = () => {
       </Card>
     </div>
   );
-};
+}
 
 export default InvestmentCalculator;
