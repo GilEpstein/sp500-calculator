@@ -49,6 +49,7 @@ const InvestmentCalculator = () => {
       parseInt(birthDate.day)
     );
     
+    const endDate = new Date(2025, 0, 31); // קבוע - 31 בינואר 2025
     const monthlyInvestment = 100;
     let totalUnits = 0;
     let totalInvested = 0;
@@ -63,15 +64,14 @@ const InvestmentCalculator = () => {
       const monthDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
       const yearMonth = `${year}-${month}`;
       
-      // קונים מניות רק אם:
-      // 1. התאריך אחרי תאריך הלידה
-      // 2. עוד לא קנינו בחודש הזה
-      if (monthDate >= birthDateObj && yearMonth !== prevMonth) {
-        // קונים מניות ב-100 דולר לפי השער של אותו חודש
+      // בודקים אם התאריך בטווח הרלוונטי
+      if (monthDate >= birthDateObj && monthDate <= endDate && yearMonth !== prevMonth) {
+        // חישוב יחידות חדשות לפי ההשקעה החודשית
         const unitsThisMonth = monthlyInvestment / row.Closing;
         totalUnits += unitsThisMonth;
         totalInvested += monthlyInvestment;
         
+        // שמירת נתוני החודש
         investmentData.push({
           date: yearMonth,
           units: totalUnits,
@@ -84,15 +84,16 @@ const InvestmentCalculator = () => {
         prevMonth = yearMonth;
       }
     }
+
+    console.log('Birth date:', birthDateObj.toLocaleDateString());
+    console.log('End date:', endDate.toLocaleDateString());
+    console.log('Total months:', investmentData.length);
+    console.log('Total invested:', totalInvested);
+    console.log('Total units:', totalUnits);
     
-    // חישוב שווי נוכחי לפי המחיר האחרון
+    // חישוב השווי הנוכחי לפי המחיר האחרון
     const lastPrice = spData[spData.length - 1].Closing;
     const currentValue = totalUnits * lastPrice;
-    
-    console.log('Total units accumulated:', totalUnits);
-    console.log('Last price:', lastPrice);
-    console.log('Total invested:', totalInvested);
-    console.log('Current value:', currentValue);
     
     setResults({
       totalInvested,
