@@ -81,14 +81,23 @@ const InvestmentCalculator = () => {
       }
     }
 
-    // Set final results
+    console.log('Total months:', investmentData.length);
+    console.log('Total units:', units);
+    console.log('Latest closing price:', lastDataRow.Closing);
+    
+    // Set final results - only current investment data, no retirement calculations
     if (investmentData.length > 0) {
-      const finalData = investmentData[investmentData.length - 1];
+      const totalInvested = monthlyInvestment * investmentData.length;
+      const currentValue = units * lastDataRow.Closing;
+      
+      console.log('Total invested:', totalInvested);
+      console.log('Current value:', currentValue);
+      
       setResults({
-        totalInvested: finalData.invested,
-        currentValue: finalData.value,
+        totalInvested,
+        currentValue,
         investmentData: investmentData.map(item => ({
-          ...item,
+          date: item.date,
           value: Math.round(item.value),
           invested: Math.round(item.invested)
         })),
