@@ -45,14 +45,10 @@ const InvestmentCalculator = () => {
   }, []);
 
   const calculateFutureValue = (presentValue, yearsToRetirement, annualReturn) => {
-    if (yearsToRetirement <= 0) {
-      return presentValue;
-    }
     return presentValue * Math.pow(1 + annualReturn, yearsToRetirement);
   };
 
   const calculateCurrentInvestment = (birthDateObj) => {
-    // מציאת התאריך האחרון בנתונים
     const lastDataRow = spData[spData.length - 1];
     const [lastDay, lastMonth, lastYear] = lastDataRow.Month.split('/');
     const lastDate = new Date(parseInt(lastYear), parseInt(lastMonth) - 1, parseInt(lastDay));
@@ -61,7 +57,6 @@ const InvestmentCalculator = () => {
     let totalMonths = 0;
     let currentDate = new Date(birthDateObj);
     
-    // חישוב עד התאריך האחרון בנתונים
     while (currentDate <= lastDate) {
       totalMonths++;
       currentDate.setMonth(currentDate.getMonth() + 1);
@@ -71,7 +66,6 @@ const InvestmentCalculator = () => {
     let units = 0;
     const investmentData = [];
     
-    // חישוב היחידות והערך הנוכחי
     for (const row of spData) {
       if (!row.Month || !row.Closing) continue;
       
@@ -118,29 +112,19 @@ const InvestmentCalculator = () => {
     const [lastDay, lastMonth, lastYear] = lastDataRow.Month.split('/');
     const lastDate = new Date(parseInt(lastYear), parseInt(lastMonth) - 1, parseInt(lastDay));
     
-    let futureValues;
-    let yearsToRetirement;
+    // חישוב גיל נוכחי בצורה מדויקת
+    const ageInMilliseconds = lastDate - birthDateObj;
+    const currentAge = ageInMilliseconds / (1000 * 60 * 60 * 24 * 365.25);
     
-    if (retirementAge === 0) {
-      // אם גיל פרישה הוא 0, מחזירים את הערך הנוכחי
-      futureValues = {
-        scenario1: currentInvestment.currentValue,
-        scenario2: currentInvestment.currentValue,
-        scenario3: currentInvestment.currentValue
-      };
-      yearsToRetirement = 0;
-    } else {
-      // חישוב גיל נוכחי
-      const currentAge = (lastDate - birthDateObj) / (1000 * 60 * 60 * 24 * 365.25);
-      yearsToRetirement = Math.max(0, retirementAge - currentAge);
-      
-      // חישוב תחזיות עתידיות
-      futureValues = {
-        scenario1: calculateFutureValue(currentInvestment.currentValue, yearsToRetirement, 0.0927),
-        scenario2: calculateFutureValue(currentInvestment.currentValue, yearsToRetirement, 0.1243),
-        scenario3: calculateFutureValue(currentInvestment.currentValue, yearsToRetirement, 0.149)
-      };
-    }
+    // חישוב שנים לפנסיה
+    const yearsToRetirement = retirementAge > 0 ? Math.max(0, retirementAge - currentAge) : 0;
+    
+    // חישוב תחזיות עתידיות
+    const futureValues = {
+      scenario1: calculateFutureValue(currentInvestment.currentValue, yearsToRetirement, 0.0927),
+      scenario2: calculateFutureValue(currentInvestment.currentValue, yearsToRetirement, 0.1243),
+      scenario3: calculateFutureValue(currentInvestment.currentValue, yearsToRetirement, 0.149)
+    };
     
     setResults({
       ...currentInvestment,
@@ -324,8 +308,7 @@ const InvestmentCalculator = () => {
                             <div className="text-sm text-orange-700">
                               לפי ממוצע 5 השנים האחרונות
                               <br />
-                              תשואה שנת
-ית: 14.9%
+                              תשואה שנתית: 14.9%
                             </div>
                           </h3>
                           <p className="text-2xl font-bold text-orange-800 text-center mt-4">
@@ -345,42 +328,51 @@ const InvestmentCalculator = () => {
                   </CardHeader>
                   <CardContent className="p-6">
                     <div className="h-96">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <LineChart data={results.investmentData}>
-                          <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
-                          <XAxis dataKey="date" stroke="#6B7280" />
-                          <YAxis stroke="#6B7280" />
-                          <Tooltip
-                            formatter={(value) => formatCurrency(value)}
-                            contentStyle={{
-                              backgroundColor: 'rgba(255, 255, 255, 0.95)',
-                              borderRadius: '0.5rem',
-                              border: 'none',
-                              boxShadow: '0 2px 10px rgba(0, 0, 0, 0.1)'
-                            }}
-                          />
-                          <Legend />
-                          <Line
-                            type="monotone"
-                            dataKey="value"
-                            name="שווי תיק"
-                            stroke="#6366f1"
-                            strokeWidth={3}
-                            dot={false}
-                          />
-                          <Line
-                            type="monotone"
-                            dataKey="invested"
-                            name="סכום שהושקע"
-                            stroke="#22c55e"
-                            strokeWidth={3}
-                            dot={false}
-                          />
-                        </LineChart>
-                      </ResponsiveContainer>
-                    </div>
-                  </CardContent>
-                </Card>
+                      <ResponsiveContainer width="100
+<Card className="shadow-md hover:shadow-lg transition-shadow">
+  <CardHeader>
+    <CardTitle className="text-center">
+      התפתחות ההשקעה לאורך זמן
+    </CardTitle>
+  </CardHeader>
+  <CardContent className="p-6">
+    <div className="h-96">
+      <ResponsiveContainer width="100%" height="100%">
+        <LineChart data={results.investmentData}>
+          <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+          <XAxis dataKey="date" stroke="#6B7280" />
+          <YAxis stroke="#6B7280" />
+          <Tooltip
+            formatter={(value) => formatCurrency(value)}
+            contentStyle={{
+              backgroundColor: 'rgba(255, 255, 255, 0.95)',
+              borderRadius: '0.5rem',
+              border: 'none',
+              boxShadow: '0 2px 10px rgba(0, 0, 0, 0.1)'
+            }}
+          />
+          <Legend />
+          <Line
+            type="monotone"
+            dataKey="value"
+            name="שווי תיק"
+            stroke="#6366f1"
+            strokeWidth={3}
+            dot={false}
+          />
+          <Line
+            type="monotone"
+            dataKey="invested"
+            name="סכום שהושקע"
+            stroke="#22c55e"
+            strokeWidth={3}
+            dot={false}
+          />
+        </LineChart>
+      </ResponsiveContainer>
+    </div>
+  </CardContent>
+</Card>
               </div>
             )}
           </div>
