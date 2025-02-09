@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Papa from 'papaparse';
 
@@ -50,60 +49,57 @@ const InvestmentCalculator = () => {
       parseInt(birthDate.day)
     );
     
-    const lastDataRow = spData[spData.length - 1];
-    const [lastDay, lastMonth, lastYear] = lastDataRow.Month.split('/');
-    const lastDate = new Date(parseInt(lastYear), parseInt(lastMonth) - 1, parseInt(lastDay));
-    
+    const currentDate = new Date(2025, 1, 1); // עד תחילת פברואר 2025
+    const diffTime = currentDate - birthDateObj;
+    const days = diffTime / (1000 * 60 * 60 * 24);
+    const totalMonths = Math.floor(days / 30.4375) + 1; // +1 עבור ינואר 2025
     const monthlyInvestment = 100;
-    const investmentData = [];
+    const totalInvested = totalMonths * monthlyInvestment;
+    
     let units = 0;
     
-    for (const row of spData) {
-      if (!row.Month || !row.Closing) continue;
-      
-      const [day, month, year] = row.Month.split('/');
-      const monthDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
-      
-      if (monthDate >= birthDateObj && monthDate <= lastDate) {
-        // Add monthly investment
-        const newUnits = monthlyInvestment / row.Closing;
-        units += newUnits;
-        
-        // Calculate value for this month
-        const currentValue = units * row.Closing;
-        const totalInvested = monthlyInvestment * (investmentData.length + 1);
-        
-        investmentData.push({
-          date: `${year}-${month}`,
-          value: currentValue,
-          invested: totalInvested
-        });
-      }
-    }
-
-    console.log('Total months:', investmentData.length);
-    console.log('Total units:', units);
-    console.log('Latest closing price:', lastDataRow.Closing);
+    // חישוב המניות שנקנו בכל חודש
+    let currentCalcDate = new Date(birthDateObj);
+    let prevMonth = null;
     
-    // Set final results - only current investment data, no retirement calculations
-    if (investmentData.length > 0) {
-      const totalInvested = monthlyInvestment * investmentData.length;
-      const currentValue = units * lastDataRow.Closing;
+    while (currentCalcDate <= currentDate) {
+      const yearMonth = `${currentCalcDate.getFullYear()}-${currentCalcDate.getMonth() + 1}`;
       
-      console.log('Total invested:', totalInvested);
-      console.log('Current value:', currentValue);
+      if (yearMonth !== prevMonth) {
+        // מחפשים את המחיר הקרוב ביותר לתאריך הנוכחי
+        const priceData = spData.find(row => {
+          const [day, month, year] = row.Month.split('/');
+          return parseInt(year) === currentCalcDate.getFullYear() && 
+                 parseInt(month) === (currentCalcDate.getMonth() + 1);
+        });
+        
+        if (priceData) {
+          const newUnits = monthlyInvestment / priceData.Closing;
+          units += newUnits;
+          prevMonth = yearMonth;
+        }
+      }
       
-      setResults({
-        totalInvested,
-        currentValue,
-        investmentData: investmentData.map(item => ({
-          date: item.date,
-          value: Math.round(item.value),
-          invested: Math.round(item.invested)
-        })),
-        latestDate: lastDataRow.Month
-      });
+      currentCalcDate.setMonth(currentCalcDate.getMonth() + 1);
     }
+    
+    // חישוב שווי נוכחי
+    const lastPrice = spData[spData.length - 1].Closing;
+    const currentValue = units * lastPrice;
+
+    console.log('Total months:', totalMonths);
+    console.log('Total invested:', totalInvested);
+    console.log('Total units:', units);
+    console.log('Last price:', lastPrice);
+    console.log('Current value:', currentValue);
+    
+    setResults({
+      totalMonths,
+      totalInvested,
+      units,
+      currentValue,
+      latestDate: spData[spData.length - 1].Month
+    });
   };
 
   const handleDateChange = (field, value) => {
@@ -212,51 +208,6 @@ const InvestmentCalculator = () => {
                     </CardContent>
                   </Card>
                 </div>
-
-                <Card className="shadow-md hover:shadow-lg transition-shadow">
-                  <CardHeader>
-                    <CardTitle className="text-center">
-                      התפתחות ההשקעה לאורך זמן
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="p-6">
-                    <div className="h-96">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <LineChart data={results.investmentData}>
-                          <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
-                          <XAxis dataKey="date" stroke="#6B7280" />
-                          <YAxis stroke="#6B7280" />
-                          <Tooltip
-                            formatter={(value) => formatCurrency(value)}
-                            contentStyle={{
-                              backgroundColor: 'rgba(255, 255, 255, 0.95)',
-                              borderRadius: '0.5rem',
-                              border: 'none',
-                              boxShadow: '0 2px 10px rgba(0, 0, 0, 0.1)'
-                            }}
-                          />
-                          <Legend />
-                          <Line
-                            type="monotone"
-                            dataKey="value"
-                            name="שווי תיק"
-                            stroke="#6366f1"
-                            strokeWidth={3}
-                            dot={false}
-                          />
-                          <Line
-                            type="monotone"
-                            dataKey="invested"
-                            name="סכום שהושקע"
-                            stroke="#22c55e"
-                            strokeWidth={3}
-                            dot={false}
-                          />
-                        </LineChart>
-                      </ResponsiveContainer>
-                    </div>
-                  </CardContent>
-                </Card>
               </div>
             )}
           </div>
