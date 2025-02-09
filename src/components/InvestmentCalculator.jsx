@@ -88,7 +88,6 @@ const InvestmentCalculator = () => {
     }
 
     const currentValue = units * spData[spData.length-1].Closing;
-    const yearlyReturn = currentValue * 0.149;
     
     // Calculate years until retirement
     const birthYear = parseInt(birthDate.year);
@@ -97,15 +96,14 @@ const InvestmentCalculator = () => {
     
     // Calculate future values based on different scenarios
     const futureValues = {
-      scenario1: calculateFutureValue(currentValue, yearsToRetirement, 0.0927), // 20 years avg
-      scenario2: calculateFutureValue(currentValue, yearsToRetirement, 0.1243), // 10 years avg
-      scenario3: calculateFutureValue(currentValue, yearsToRetirement, 0.149)   // 5 years avg
+      scenario1: calculateFutureValue(currentValue, yearsToRetirement, 0.0927),
+      scenario2: calculateFutureValue(currentValue, yearsToRetirement, 0.1243),
+      scenario3: calculateFutureValue(currentValue, yearsToRetirement, 0.149)
     };
     
     setResults({
       totalInvested,
       currentValue,
-      yearlyReturn,
       investmentData: investmentData.map(item => ({
         ...item,
         value: Math.round(item.value),
@@ -215,7 +213,7 @@ const InvestmentCalculator = () => {
                   נכון לתאריך: {results.latestDate}
                 </div>
                 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <Card className="bg-gradient-to-br from-blue-50 to-blue-100 shadow-md hover:shadow-lg transition-shadow">
                     <CardContent className="p-6">
                       <h3 className="text-lg font-semibold text-blue-900 mb-2 text-center">
@@ -237,17 +235,28 @@ const InvestmentCalculator = () => {
                       </p>
                     </CardContent>
                   </Card>
+                </div>
 
-                  {results.yearsToRetirement > 0 && (
-                    <>
+                {results.yearsToRetirement > 0 && (
+                  <div>
+                    <div className="text-center text-xl font-semibold text-gray-800 mb-4">
+                      תחזית לגיל {retirementAge} (בעוד {results.yearsToRetirement} שנים)
+                    </div>
+                    <div className="text-center text-sm text-gray-600 mb-6">
+                      בהתבסס על הערך הנוכחי של התיק וממוצעי התשואה ההיסטוריים
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                       <Card className="bg-gradient-to-br from-orange-50 to-orange-100 shadow-md hover:shadow-lg transition-shadow">
                         <CardContent className="p-6">
-                          <h3 className="text-sm font-semibold text-orange-900 mb-2 text-center">
+                          <h3 className="text-base font-semibold text-orange-900 mb-2 text-center">
                             תחזית שמרנית
-                            <br />
-                            <span className="text-xs">(9.27%)</span>
+                            <div className="text-sm text-orange-700">
+                              לפי ממוצע 20 השנים האחרונות
+                              <br />
+                              תשואה שנתית: 9.27%
+                            </div>
                           </h3>
-                          <p className="text-2xl font-bold text-orange-800 text-center">
+                          <p className="text-2xl font-bold text-orange-800 text-center mt-4">
                             {formatCurrency(results.futureValues.scenario1)}
                           </p>
                         </CardContent>
@@ -255,12 +264,15 @@ const InvestmentCalculator = () => {
 
                       <Card className="bg-gradient-to-br from-orange-50 to-orange-100 shadow-md hover:shadow-lg transition-shadow">
                         <CardContent className="p-6">
-                          <h3 className="text-sm font-semibold text-orange-900 mb-2 text-center">
+                          <h3 className="text-base font-semibold text-orange-900 mb-2 text-center">
                             תחזית מאוזנת
-                            <br />
-                            <span className="text-xs">(12.43%)</span>
+                            <div className="text-sm text-orange-700">
+                              לפי ממוצע 10 השנים האחרונות
+                              <br />
+                              תשואה שנתית: 12.43%
+                            </div>
                           </h3>
-                          <p className="text-2xl font-bold text-orange-800 text-center">
+                          <p className="text-2xl font-bold text-orange-800 text-center mt-4">
                             {formatCurrency(results.futureValues.scenario2)}
                           </p>
                         </CardContent>
@@ -268,32 +280,22 @@ const InvestmentCalculator = () => {
 
                       <Card className="bg-gradient-to-br from-orange-50 to-orange-100 shadow-md hover:shadow-lg transition-shadow">
                         <CardContent className="p-6">
-                          <h3 className="text-sm font-semibold text-orange-900 mb-2 text-center">
+                          <h3 className="text-base font-semibold text-orange-900 mb-2 text-center">
                             תחזית אופטימית
-                            <br />
-                            <span className="text-xs">(14.9%)</span>
+                            <div className="text-sm text-orange-700">
+                              לפי ממוצע 5 השנים האחרונות
+                              <br />
+                              תשואה שנתית: 14.9%
+                            </div>
                           </h3>
-                          <p className="text-2xl font-bold text-orange-800 text-center">
+                          <p className="text-2xl font-bold text-orange-800 text-center mt-4">
                             {formatCurrency(results.futureValues.scenario3)}
                           </p>
                         </CardContent>
                       </Card>
-                    </>
-                  )}
-                </div>
-
-                <Card className="bg-gradient-to-br from-purple-50 to-purple-100 shadow-md hover:shadow-lg transition-shadow">
-                  <CardHeader>
-                    <CardTitle className="text-center text-purple-900">
-                      תוספת שנתית
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="p-6">
-                    <p className="text-3xl font-bold text-purple-800 text-center">
-                      {formatCurrency(results.yearlyReturn)}
-                    </p>
-                  </CardContent>
-                </Card>
+                    </div>
+                  </div>
+                )}
 
                 <Card className="shadow-md hover:shadow-lg transition-shadow">
                   <CardHeader>
@@ -310,42 +312,3 @@ const InvestmentCalculator = () => {
                           <YAxis stroke="#6B7280" />
                           <Tooltip
                             formatter={(value) => formatCurrency(value)}
-                            contentStyle={{
-                              backgroundColor: 'rgba(255, 255, 255, 0.95)',
-                              borderRadius: '0.5rem',
-                              border: 'none',
-                              boxShadow: '0 2px 10px rgba(0, 0, 0, 0.1)'
-                            }}
-                          />
-                          <Legend />
-                          <Line
-                            type="monotone"
-                            dataKey="value"
-                            name="שווי תיק"
-                            stroke="#6366f1"
-                            strokeWidth={3}
-                            dot={false}
-                          />
-                          <Line
-                            type="monotone"
-                            dataKey="invested"
-                            name="סכום שהושקע"
-                            stroke="#22c55e"
-                            strokeWidth={3}
-                            dot={false}
-                          />
-                        </LineChart>
-                      </ResponsiveContainer>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            )}
-          </div>
-        </CardContent>
-      </Card>
-    </div>
-  );
-};
-
-export default InvestmentCalculator;
