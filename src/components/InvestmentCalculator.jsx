@@ -312,3 +312,30 @@ const InvestmentCalculator = () => {
                           <YAxis stroke="#6B7280" />
                           <Tooltip
                             formatter={(value) => formatCurrency(value)}
+                            contentStyle={{
+                              backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                              borderRadius: '0.5rem',
+                              border: 'none',
+                              boxShadow: '0 2px 10px rgba(0, 0, 0, 0.1)'
+                            }}
+                          />
+                          <Legend />
+                          <Line
+                            type="monotone"
+                            dataKey="value"
+                            name="שווי תיק"
+                            stroke="#6366f1"
+                            strokeWidth={3}
+                            dot={false}
+                          />
+                          <Line
+                            type="monotone"
+                            dataKey="invested"
+                            name="סכום שהושקע"
+                            stroke="#22c55e"
+                            strokeWidth={3}
+                            dot={false}
+                          />
+                        </LineChart>
+                      </ResponsiveContainer>
+                    </div>
