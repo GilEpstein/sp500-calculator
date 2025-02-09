@@ -10,8 +10,7 @@ const InvestmentCalculator = () => {
     year: ''
   });
   const [spData, setSpData] = useState([]);
-  const [currentResults, setCurrentResults] = useState(null);
-  const [futureResults, setFutureResults] = useState(null);
+  const [results, setResults] = useState(null);
   const [retirementAge, setRetirementAge] = useState(67);
   const [dataLoaded, setDataLoaded] = useState(false);
   const [error, setError] = useState(null);
@@ -49,16 +48,7 @@ const InvestmentCalculator = () => {
     return presentValue * Math.pow(1 + annualReturn, yearsWithMonths);
   };
 
-  // חישוב ערך ההשקעה עד היום - ללא תלות בגיל פרישה
-  const calculateCurrentInvestment = () => {
-    if (!birthDate.year || !spData.length) return;
-
-    const birthDateObj = new Date(
-      parseInt(birthDate.year), 
-      parseInt(birthDate.month) - 1, 
-      parseInt(birthDate.day)
-    );
-
+  const calculateCurrentInvestment = (birthDateObj) => {
     const lastDataRow = spData[spData.length - 1];
     const [lastDay, lastMonth, lastYear] = lastDataRow.Month.split('/');
     const lastDate = new Date(parseInt(lastYear), parseInt(lastMonth) - 1, parseInt(lastDay));
@@ -97,57 +87,71 @@ const InvestmentCalculator = () => {
 
     const currentValue = units * lastDataRow.Closing;
     
-    setCurrentResults({
+    return {
       totalInvested,
       currentValue,
-      investmentData: investmentData.map(item => ({
-        ...item,
-        value: Math.round(item.value),
-        invested: Math.round(item.invested)
-      })),
-      latestDate: lastDataRow.Month,
-      birthDateObj  // שמירת תאריך הלידה לחישובים עתידיים
-    });
+      investmentData,
+      latestDate: lastDataRow.Month
+    };
   };
 
-  // חישוב תחזית לגיל פרישה - רק כשמשנים את גיל הפרישה
-  const calculateRetirementForecast = () => {
-    if (!currentResults) return;
+  const calculateInvestment = () => {
+    if (!birthDate.year || !spData.length) return;
 
+    const birthDateObj = new Date(
+      parseInt(birthDate.year), 
+      parseInt(birthDate.month) - 1, 
+      parseInt(birthDate.day)
+    );
+    
+    // שלב 1: חישוב הערך הנוכחי - תמיד מתבצע
+    const currentInvestment = calculateCurrentInvestment(birthDateObj);
+    
+    // חישוב הגיל הנוכחי
     const lastDataRow = spData[spData.length - 1];
     const [lastDay, lastMonth, lastYear] = lastDataRow.Month.split('/');
     const lastDate = new Date(parseInt(lastYear), parseInt(lastMonth) - 1, parseInt(lastDay));
-    
-    // חישוב הגיל הנוכחי
-    const diffTime = lastDate - currentResults.birthDateObj;
+    const diffTime = lastDate - birthDateObj;
     const currentAgeInMonths = Math.floor(diffTime / (1000 * 60 * 60 * 24 * 30.4375));
     const currentAge = currentAgeInMonths / 12;
 
-    // אם כבר הגענו לגיל פרישה, אין צורך בתחזית
-    if (retirementAge <= currentAge) {
-      setFutureResults(null);
-      return;
-    }
-
-    // חישוב הזמן שנותר עד לפרישה
-    const retirementAgeInMonths = retirementAge * 12;
-    const monthsToRetirement = retirementAgeInMonths - currentAgeInMonths;
-    const yearsToRetirement = Math.floor(monthsToRetirement / 12);
-    const remainingMonths = monthsToRetirement % 12;
-    
-    // חישוב תחזיות לפי תרחישים שונים
-    const yearsWithMonthsFraction = yearsToRetirement + (remainingMonths / 12);
-    const futureValues = {
-      scenario1: calculateFutureValue(currentResults.currentValue, yearsWithMonthsFraction, 0.0927),
-      scenario2: calculateFutureValue(currentResults.currentValue, yearsWithMonthsFraction, 0.1243),
-      scenario3: calculateFutureValue(currentResults.currentValue, yearsWithMonthsFraction, 0.149)
+    // בסיס התוצאות - תמיד כולל את הערך הנוכחי
+    const baseResults = {
+      ...currentInvestment,
+      investmentData: currentInvestment.investmentData.map(item => ({
+        ...item,
+        value: Math.round(item.value),
+        invested: Math.round(item.invested)
+      }))
     };
 
-    setFutureResults({
-      yearsToRetirement,
-      monthsToRetirement: remainingMonths,
-      futureValues
-    });
+    // שלב 2: חישוב תחזיות עתידיות - רק אם גיל הפנסיה גדול מהגיל הנוכחי
+    if (retirementAge > currentAge) {
+      const retirementAgeInMonths = retirementAge * 12;
+      const monthsToRetirement = retirementAgeInMonths - currentAgeInMonths;
+      
+      // חישוב שנים וחודשים שנשארו
+      const yearsToRetirement = Math.floor(monthsToRetirement / 12);
+      const remainingMonths = monthsToRetirement % 12;
+      
+      // חישוב תחזיות עתידיות
+      const yearsWithMonthsFraction = yearsToRetirement + (remainingMonths / 12);
+      const futureValues = {
+        scenario1: calculateFutureValue(currentInvestment.currentValue, yearsWithMonthsFraction, 0.0927),
+        scenario2: calculateFutureValue(currentInvestment.currentValue, yearsWithMonthsFraction, 0.1243),
+        scenario3: calculateFutureValue(currentInvestment.currentValue, yearsWithMonthsFraction, 0.149)
+      };
+
+      setResults({
+        ...baseResults,
+        yearsToRetirement,
+        monthsToRetirement: remainingMonths,
+        futureValues
+      });
+    } else {
+      // אם גיל הפנסיה קטן או שווה לגיל הנוכחי, מחזירים רק את הערך הנוכחי
+      setResults(baseResults);
+    }
   };
 
   const handleDateChange = (field, value) => {
@@ -156,15 +160,8 @@ const InvestmentCalculator = () => {
       [field]: value
     }));
     
-    setTimeout(calculateCurrentInvestment, 0);
+    setTimeout(calculateInvestment, 0);
   };
-
-  // כשמשנים את גיל הפרישה
-  useEffect(() => {
-    if (currentResults) {
-      calculateRetirementForecast();
-    }
-  }, [retirementAge, currentResults]);
 
   const formatCurrency = (value) => {
     return new Intl.NumberFormat('he-IL', {
@@ -193,7 +190,7 @@ const InvestmentCalculator = () => {
         
         <CardContent className="p-8">
           <div className="space-y-8">
-            <div className="grid grid-cols-3 gap-6">
+            <div className="grid grid-cols-4 gap-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">יום</label>
                 <input
@@ -227,6 +224,20 @@ const InvestmentCalculator = () => {
                   onChange={(e) => handleDateChange('year', e.target.value)}
                 />
               </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">גיל פרישה</label>
+                <input
+                  type="number"
+                  className="w-full border-2 border-gray-200 rounded-lg px-4 py-2"
+                  value={retirementAge}
+                  onChange={(e) => {
+                    setRetirementAge(Number(e.target.value));
+                    calculateInvestment();
+                  }}
+                  min="0"
+                  max="120"
+                />
+              </div>
             </div>
 
             {error && (
@@ -235,10 +246,10 @@ const InvestmentCalculator = () => {
               </div>
             )}
 
-            {currentResults && (
+            {results && (
               <div className="space-y-8">
                 <div className="text-sm text-gray-500 text-center">
-                  נכון לתאריך: {currentResults.latestDate}
+                  נכון לתאריך: {results.latestDate}
                 </div>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -248,7 +259,7 @@ const InvestmentCalculator = () => {
                         סך הכל הושקע
                       </h3>
                       <p className="text-3xl font-bold text-blue-800 text-center">
-                        {formatCurrency(currentResults.totalInvested)}
+                        {formatCurrency(results.totalInvested)}
                       </p>
                     </CardContent>
                   </Card>
@@ -259,37 +270,20 @@ const InvestmentCalculator = () => {
                         שווי נוכחי
                       </h3>
                       <p className="text-3xl font-bold text-green-800 text-center">
-                        {formatCurrency(currentResults.currentValue)}
+                        {formatCurrency(results.currentValue)}
                       </p>
                     </CardContent>
                   </Card>
                 </div>
 
-                {/* תיבת קלט גיל פרישה מוצגת רק אחרי שיש תוצאות ראשוניות */}
-                <div className="mt-8">
-                  <div className="max-w-xs mx-auto">
-                    <label className="block text-sm font-medium text-gray-700 mb-2 text-center">
-                      רוצה לדעת כמה יהיה לך בפרישה?
-                    </label>
-                    <input
-                      type="number"
-                      className="w-full border-2 border-gray-200 rounded-lg px-4 py-2 text-center"
-                      value={retirementAge}
-                      onChange={(e) => setRetirementAge(Number(e.target.value))}
-                      min="0"
-                      max="120"
-                    />
-                  </div>
-                </div>
-
-                {futureResults && (
+                {results.futureValues && (
                   <div>
                     <div className="text-center text-xl font-semibold text-gray-800 mb-4">
                       תחזית לגיל {retirementAge} 
-                      {futureResults.yearsToRetirement > 0 || futureResults.monthsToRetirement > 0 ? 
-                        ` (בעוד ${futureResults.yearsToRetirement > 0 ? `${futureResults.yearsToRetirement} שנים` : ''}${
-                          futureResults.yearsToRetirement > 0 && futureResults.monthsToRetirement > 0 ? ' ו-' : ''
-                        }${futureResults.monthsToRetirement > 0 ? `${futureResults.monthsToRetirement} חודשים` : ''})` 
+                      {results.yearsToRetirement > 0 || results.monthsToRetirement > 0 ? 
+                        ` (בעוד ${results.yearsToRetirement > 0 ? `${results.yearsToRetirement} שנים` : ''}${
+                          results.yearsToRetirement > 0 && results.monthsToRetirement > 0 ? ' ו-' : ''
+                        }${results.monthsToRetirement > 0 ? `${results.monthsToRetirement} חודשים` : ''})` 
                         : ''
                       }
                     </div>
@@ -306,9 +300,9 @@ const InvestmentCalculator = () => {
                               <br />
                               תשואה שנתית: 9.27%
                             </div>
-</h3>
+                          </h3>
                           <p className="text-2xl font-bold text-orange-800 text-center mt-4">
-                            {formatCurrency(futureResults.futureValues.scenario1)}
+                            {formatCurrency(results.futureValues.scenario1)}
                           </p>
                         </CardContent>
                       </Card>
@@ -324,7 +318,7 @@ const InvestmentCalculator = () => {
                             </div>
                           </h3>
                           <p className="text-2xl font-bold text-orange-800 text-center mt-4">
-                            {formatCurrency(futureResults.futureValues.scenario2)}
+                            {formatCurrency(results.futureValues.scenario2)}
                           </p>
                         </CardContent>
                       </Card>
@@ -340,7 +334,7 @@ const InvestmentCalculator = () => {
                             </div>
                           </h3>
                           <p className="text-2xl font-bold text-orange-800 text-center mt-4">
-                            {formatCurrency(futureResults.futureValues.scenario3)}
+                            {formatCurrency(results.futureValues.scenario3)}
                           </p>
                         </CardContent>
                       </Card>
@@ -357,7 +351,7 @@ const InvestmentCalculator = () => {
                   <CardContent className="p-6">
                     <div className="h-96">
                       <ResponsiveContainer width="100%" height="100%">
-                        <LineChart data={currentResults.investmentData}>
+                        <LineChart data={results.investmentData}>
                           <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
                           <XAxis dataKey="date" stroke="#6B7280" />
                           <YAxis stroke="#6B7280" />
