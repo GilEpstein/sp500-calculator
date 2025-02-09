@@ -1,3 +1,5 @@
+
+```javascript
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Papa from 'papaparse';
@@ -11,7 +13,7 @@ const InvestmentCalculator = () => {
   const [spData, setSpData] = useState([]);
   const [results, setResults] = useState(null);
   const [error, setError] = useState(null);
-  
+
   useEffect(() => {
     const loadData = async () => {
       try {
@@ -48,29 +50,29 @@ const InvestmentCalculator = () => {
       parseInt(birthDate.month) - 1, 
       parseInt(birthDate.day)
     );
-    
+
     const endDate = new Date(2025, 0, 31); // קבוע - 31 בינואר 2025
     const monthlyInvestment = 100;
     let totalUnits = 0;
     let totalInvested = 0;
     let prevMonth = null;
     const investmentData = [];
-    
+
     // עוברים על כל הנתונים ההיסטוריים
     for (const row of spData) {
       if (!row.Month || !row.Closing) continue;
-      
+
       const [day, month, year] = row.Month.split('/');
       const monthDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
       const yearMonth = `${year}-${month}`;
-      
+
       // בודקים אם התאריך בטווח הרלוונטי
       if (monthDate >= birthDateObj && monthDate <= endDate && yearMonth !== prevMonth) {
         // חישוב יחידות חדשות לפי ההשקעה החודשית
         const unitsThisMonth = monthlyInvestment / row.Closing;
         totalUnits += unitsThisMonth;
         totalInvested += monthlyInvestment;
-        
+
         // שמירת נתוני החודש
         investmentData.push({
           date: yearMonth,
@@ -80,7 +82,7 @@ const InvestmentCalculator = () => {
           invested: totalInvested,
           price: row.Closing
         });
-        
+
         prevMonth = yearMonth;
       }
     }
@@ -90,18 +92,24 @@ const InvestmentCalculator = () => {
     console.log('Total months:', investmentData.length);
     console.log('Total invested:', totalInvested);
     console.log('Total units:', totalUnits);
-    
+
     // חישוב השווי הנוכחי לפי המחיר האחרון
     const lastPrice = spData[spData.length - 1].Closing;
     const currentValue = totalUnits * lastPrice;
-    
+
+    // Separate calculations
+    const totalInvestmentValue = totalInvested;
+    const totalSharesValue = totalUnits * lastPrice;
+
     setResults({
       totalInvested,
       currentValue,
       totalUnits,
       lastPrice,
       investmentData,
-      latestDate: spData[spData.length - 1].Month
+      latestDate: spData[spData.length - 1].Month,
+      totalInvestmentValue,
+      totalSharesValue
     });
   };
 
@@ -195,7 +203,7 @@ const InvestmentCalculator = () => {
                         סך הכל הושקע
                       </h3>
                       <p className="text-3xl font-bold text-blue-800 text-center">
-                        {formatCurrency(results.totalInvested)}
+                        {formatCurrency(results.totalInvestmentValue)}
                       </p>
                       <p className="text-sm text-blue-600 text-center mt-2">
                         סה"כ יחידות: {results.totalUnits.toFixed(2)}
@@ -209,7 +217,7 @@ const InvestmentCalculator = () => {
                         שווי נוכחי
                       </h3>
                       <p className="text-3xl font-bold text-green-800 text-center">
-                        {formatCurrency(results.currentValue)}
+                        {formatCurrency(results.totalSharesValue)}
                       </p>
                       <p className="text-sm text-green-600 text-center mt-2">
                         מחיר אחרון: {formatCurrency(results.lastPrice)}
@@ -227,3 +235,5 @@ const InvestmentCalculator = () => {
 };
 
 export default InvestmentCalculator;
+```
+
