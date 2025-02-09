@@ -1,5 +1,3 @@
-It seems the file contains some extra text that shouldn't be there. Please replace the entire content of `InvestmentCalculator.jsx` with the corrected code below:
-
 ```javascript
 import React, { useState, useEffect } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
