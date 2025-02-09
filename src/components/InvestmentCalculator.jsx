@@ -10,7 +10,8 @@ const InvestmentCalculator = () => {
     year: ''
   });
   const [spData, setSpData] = useState([]);
-  const [results, setResults] = useState(null);
+  const [currentResults, setCurrentResults] = useState(null);
+  const [futureResults, setFutureResults] = useState(null);
   const [retirementAge, setRetirementAge] = useState(67);
   const [dataLoaded, setDataLoaded] = useState(false);
   const [error, setError] = useState(null);
@@ -48,9 +49,15 @@ const InvestmentCalculator = () => {
     return presentValue * Math.pow(1 + annualReturn, yearsWithMonths);
   };
 
-  // חישוב ערך ההשקעה עד היום
-  const calculateCurrentInvestmentValue = (birthDateObj) => {
-    if (!birthDate.year || !spData.length) return null;
+  // חישוב ערך ההשקעה עד היום - ללא תלות בגיל פרישה
+  const calculateCurrentInvestment = () => {
+    if (!birthDate.year || !spData.length) return;
+
+    const birthDateObj = new Date(
+      parseInt(birthDate.year), 
+      parseInt(birthDate.month) - 1, 
+      parseInt(birthDate.day)
+    );
 
     const lastDataRow = spData[spData.length - 1];
     const [lastDay, lastMonth, lastYear] = lastDataRow.Month.split('/');
@@ -90,7 +97,7 @@ const InvestmentCalculator = () => {
 
     const currentValue = units * lastDataRow.Closing;
     
-    return {
+    setCurrentResults({
       totalInvested,
       currentValue,
       investmentData: investmentData.map(item => ({
@@ -98,28 +105,32 @@ const InvestmentCalculator = () => {
         value: Math.round(item.value),
         invested: Math.round(item.invested)
       })),
-      latestDate: lastDataRow.Month
-    };
+      latestDate: lastDataRow.Month,
+      birthDateObj  // שמירת תאריך הלידה לחישובים עתידיים
+    });
   };
 
-  // חישוב תחזית לגיל פרישה
-  const calculateRetirementForecast = (currentValue, birthDateObj, targetRetirementAge) => {
+  // חישוב תחזית לגיל פרישה - רק כשמשנים את גיל הפרישה
+  const calculateRetirementForecast = () => {
+    if (!currentResults) return;
+
     const lastDataRow = spData[spData.length - 1];
     const [lastDay, lastMonth, lastYear] = lastDataRow.Month.split('/');
     const lastDate = new Date(parseInt(lastYear), parseInt(lastMonth) - 1, parseInt(lastDay));
     
     // חישוב הגיל הנוכחי
-    const diffTime = lastDate - birthDateObj;
+    const diffTime = lastDate - currentResults.birthDateObj;
     const currentAgeInMonths = Math.floor(diffTime / (1000 * 60 * 60 * 24 * 30.4375));
     const currentAge = currentAgeInMonths / 12;
 
     // אם כבר הגענו לגיל פרישה, אין צורך בתחזית
-    if (targetRetirementAge <= currentAge) {
-      return null;
+    if (retirementAge <= currentAge) {
+      setFutureResults(null);
+      return;
     }
 
     // חישוב הזמן שנותר עד לפרישה
-    const retirementAgeInMonths = targetRetirementAge * 12;
+    const retirementAgeInMonths = retirementAge * 12;
     const monthsToRetirement = retirementAgeInMonths - currentAgeInMonths;
     const yearsToRetirement = Math.floor(monthsToRetirement / 12);
     const remainingMonths = monthsToRetirement % 12;
@@ -127,42 +138,15 @@ const InvestmentCalculator = () => {
     // חישוב תחזיות לפי תרחישים שונים
     const yearsWithMonthsFraction = yearsToRetirement + (remainingMonths / 12);
     const futureValues = {
-      scenario1: calculateFutureValue(currentValue, yearsWithMonthsFraction, 0.0927),
-      scenario2: calculateFutureValue(currentValue, yearsWithMonthsFraction, 0.1243),
-      scenario3: calculateFutureValue(currentValue, yearsWithMonthsFraction, 0.149)
+      scenario1: calculateFutureValue(currentResults.currentValue, yearsWithMonthsFraction, 0.0927),
+      scenario2: calculateFutureValue(currentResults.currentValue, yearsWithMonthsFraction, 0.1243),
+      scenario3: calculateFutureValue(currentResults.currentValue, yearsWithMonthsFraction, 0.149)
     };
 
-    return {
+    setFutureResults({
       yearsToRetirement,
       monthsToRetirement: remainingMonths,
       futureValues
-    };
-  };
-
-  const calculateInvestment = () => {
-    if (!birthDate.year || !spData.length) return;
-
-    const birthDateObj = new Date(
-      parseInt(birthDate.year), 
-      parseInt(birthDate.month) - 1, 
-      parseInt(birthDate.day)
-    );
-    
-    // שלב 1: חישוב ערך ההשקעה עד היום
-    const currentInvestmentResults = calculateCurrentInvestmentValue(birthDateObj);
-    if (!currentInvestmentResults) return;
-    
-    // שלב 2: חישוב תחזית לגיל פרישה
-    const retirementResults = calculateRetirementForecast(
-      currentInvestmentResults.currentValue,
-      birthDateObj,
-      retirementAge
-    );
-    
-    // שילוב התוצאות
-    setResults({
-      ...currentInvestmentResults,
-      ...(retirementResults || {})
     });
   };
 
@@ -172,8 +156,15 @@ const InvestmentCalculator = () => {
       [field]: value
     }));
     
-    setTimeout(calculateInvestment, 0);
+    setTimeout(calculateCurrentInvestment, 0);
   };
+
+  // כשמשנים את גיל הפרישה
+  useEffect(() => {
+    if (currentResults) {
+      calculateRetirementForecast();
+    }
+  }, [retirementAge, currentResults]);
 
   const formatCurrency = (value) => {
     return new Intl.NumberFormat('he-IL', {
@@ -202,7 +193,7 @@ const InvestmentCalculator = () => {
         
         <CardContent className="p-8">
           <div className="space-y-8">
-            <div className="grid grid-cols-4 gap-6">
+            <div className="grid grid-cols-3 gap-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">יום</label>
                 <input
@@ -236,20 +227,6 @@ const InvestmentCalculator = () => {
                   onChange={(e) => handleDateChange('year', e.target.value)}
                 />
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">גיל פרישה</label>
-                <input
-                  type="number"
-                  className="w-full border-2 border-gray-200 rounded-lg px-4 py-2"
-                  value={retirementAge}
-                  onChange={(e) => {
-                    setRetirementAge(Number(e.target.value));
-                    calculateInvestment();
-                  }}
-                  min="0"
-                  max="120"
-                />
-              </div>
             </div>
 
             {error && (
@@ -258,10 +235,10 @@ const InvestmentCalculator = () => {
               </div>
             )}
 
-            {results && (
+            {currentResults && (
               <div className="space-y-8">
                 <div className="text-sm text-gray-500 text-center">
-                  נכון לתאריך: {results.latestDate}
+                  נכון לתאריך: {currentResults.latestDate}
                 </div>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -271,7 +248,7 @@ const InvestmentCalculator = () => {
                         סך הכל הושקע
                       </h3>
                       <p className="text-3xl font-bold text-blue-800 text-center">
-                        {formatCurrency(results.totalInvested)}
+                        {formatCurrency(currentResults.totalInvested)}
                       </p>
                     </CardContent>
                   </Card>
@@ -282,20 +259,37 @@ const InvestmentCalculator = () => {
                         שווי נוכחי
                       </h3>
                       <p className="text-3xl font-bold text-green-800 text-center">
-                        {formatCurrency(results.currentValue)}
+                        {formatCurrency(currentResults.currentValue)}
                       </p>
                     </CardContent>
                   </Card>
                 </div>
 
-                {results.futureValues && (
+                {/* תיבת קלט גיל פרישה מוצגת רק אחרי שיש תוצאות ראשוניות */}
+                <div className="mt-8">
+                  <div className="max-w-xs mx-auto">
+                    <label className="block text-sm font-medium text-gray-700 mb-2 text-center">
+                      רוצה לדעת כמה יהיה לך בפרישה?
+                    </label>
+                    <input
+                      type="number"
+                      className="w-full border-2 border-gray-200 rounded-lg px-4 py-2 text-center"
+                      value={retirementAge}
+                      onChange={(e) => setRetirementAge(Number(e.target.value))}
+                      min="0"
+                      max="120"
+                    />
+                  </div>
+                </div>
+
+                {futureResults && (
                   <div>
                     <div className="text-center text-xl font-semibold text-gray-800 mb-4">
                       תחזית לגיל {retirementAge} 
-                      {results.yearsToRetirement > 0 || results.monthsToRetirement > 0 ? 
-                        ` (בעוד ${results.yearsToRetirement > 0 ? `${results.yearsToRetirement} שנים` : ''}${
-                          results.yearsToRetirement > 0 && results.monthsToRetirement > 0 ? ' ו-' : ''
-                        }${results.monthsToRetirement > 0 ? `${results.monthsToRetirement} חודשים` : ''})` 
+                      {futureResults.yearsToRetirement > 0 || futureResults.monthsToRetirement > 0 ? 
+                        ` (בעוד ${futureResults.yearsToRetirement > 0 ? `${futureResults.yearsToRetirement} שנים` : ''}${
+                          futureResults.yearsToRetirement > 0 && futureResults.monthsToRetirement > 0 ? ' ו-' : ''
+                        }${futureResults.monthsToRetirement > 0 ? `${futureResults.monthsToRetirement} חודשים` : ''})` 
                         : ''
                       }
                     </div>
@@ -312,9 +306,9 @@ const InvestmentCalculator = () => {
                               <br />
                               תשואה שנתית: 9.27%
                             </div>
-                          </h3>
+</h3>
                           <p className="text-2xl font-bold text-orange-800 text-center mt-4">
-                            {formatCurrency(results.futureValues.scenario1)}
+                            {formatCurrency(futureResults.futureValues.scenario1)}
                           </p>
                         </CardContent>
                       </Card>
@@ -326,11 +320,11 @@ const InvestmentCalculator = () => {
                             <div className="text-sm text-orange-700">
                               לפי ממוצע 10 השנים האחרונות
                               <br />
-תשואה שנתית: 12.43%
+                              תשואה שנתית: 12.43%
                             </div>
                           </h3>
                           <p className="text-2xl font-bold text-orange-800 text-center mt-4">
-                            {formatCurrency(results.futureValues.scenario2)}
+                            {formatCurrency(futureResults.futureValues.scenario2)}
                           </p>
                         </CardContent>
                       </Card>
@@ -346,7 +340,7 @@ const InvestmentCalculator = () => {
                             </div>
                           </h3>
                           <p className="text-2xl font-bold text-orange-800 text-center mt-4">
-                            {formatCurrency(results.futureValues.scenario3)}
+                            {formatCurrency(futureResults.futureValues.scenario3)}
                           </p>
                         </CardContent>
                       </Card>
@@ -363,7 +357,7 @@ const InvestmentCalculator = () => {
                   <CardContent className="p-6">
                     <div className="h-96">
                       <ResponsiveContainer width="100%" height="100%">
-                        <LineChart data={results.investmentData}>
+                        <LineChart data={currentResults.investmentData}>
                           <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
                           <XAxis dataKey="date" stroke="#6B7280" />
                           <YAxis stroke="#6B7280" />
