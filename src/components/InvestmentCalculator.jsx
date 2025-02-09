@@ -44,8 +44,8 @@ const InvestmentCalculator = () => {
     loadData();
   }, []);
 
-  const calculateFutureValue = (presentValue, yearsToRetirement, annualReturn) => {
-    return presentValue * Math.pow(1 + annualReturn, yearsToRetirement);
+  const calculateFutureValue = (presentValue, yearsWithMonths, annualReturn) => {
+    return presentValue * Math.pow(1 + annualReturn, yearsWithMonths);
   };
 
   const calculateCurrentInvestment = (birthDateObj) => {
@@ -104,38 +104,54 @@ const InvestmentCalculator = () => {
       parseInt(birthDate.day)
     );
     
-    // חישוב ערך נוכחי
+    // שלב 1: חישוב הערך הנוכחי - תמיד מתבצע
     const currentInvestment = calculateCurrentInvestment(birthDateObj);
     
-    // מציאת התאריך האחרון בנתונים
+    // חישוב הגיל הנוכחי
     const lastDataRow = spData[spData.length - 1];
     const [lastDay, lastMonth, lastYear] = lastDataRow.Month.split('/');
     const lastDate = new Date(parseInt(lastYear), parseInt(lastMonth) - 1, parseInt(lastDay));
-    
-    // חישוב גיל נוכחי בצורה מדויקת
-    const ageInMilliseconds = lastDate - birthDateObj;
-    const currentAge = ageInMilliseconds / (1000 * 60 * 60 * 24 * 365.25);
-    
-    // חישוב שנים לפנסיה
-    const yearsToRetirement = retirementAge > 0 ? Math.max(0, retirementAge - currentAge) : 0;
-    
-    // חישוב תחזיות עתידיות
-    const futureValues = {
-      scenario1: calculateFutureValue(currentInvestment.currentValue, yearsToRetirement, 0.0927),
-      scenario2: calculateFutureValue(currentInvestment.currentValue, yearsToRetirement, 0.1243),
-      scenario3: calculateFutureValue(currentInvestment.currentValue, yearsToRetirement, 0.149)
-    };
-    
-    setResults({
+    const diffTime = lastDate - birthDateObj;
+    const currentAgeInMonths = Math.floor(diffTime / (1000 * 60 * 60 * 24 * 30.4375));
+    const currentAge = currentAgeInMonths / 12;
+
+    // בסיס התוצאות - תמיד כולל את הערך הנוכחי
+    const baseResults = {
       ...currentInvestment,
       investmentData: currentInvestment.investmentData.map(item => ({
         ...item,
         value: Math.round(item.value),
         invested: Math.round(item.invested)
-      })),
-      yearsToRetirement,
-      futureValues
-    });
+      }))
+    };
+
+    // שלב 2: חישוב תחזיות עתידיות - רק אם גיל הפנסיה גדול מהגיל הנוכחי
+    if (retirementAge > currentAge) {
+      const retirementAgeInMonths = retirementAge * 12;
+      const monthsToRetirement = retirementAgeInMonths - currentAgeInMonths;
+      
+      // חישוב שנים וחודשים שנשארו
+      const yearsToRetirement = Math.floor(monthsToRetirement / 12);
+      const remainingMonths = monthsToRetirement % 12;
+      
+      // חישוב תחזיות עתידיות
+      const yearsWithMonthsFraction = yearsToRetirement + (remainingMonths / 12);
+      const futureValues = {
+        scenario1: calculateFutureValue(currentInvestment.currentValue, yearsWithMonthsFraction, 0.0927),
+        scenario2: calculateFutureValue(currentInvestment.currentValue, yearsWithMonthsFraction, 0.1243),
+        scenario3: calculateFutureValue(currentInvestment.currentValue, yearsWithMonthsFraction, 0.149)
+      };
+
+      setResults({
+        ...baseResults,
+        yearsToRetirement,
+        monthsToRetirement: remainingMonths,
+        futureValues
+      });
+    } else {
+      // אם גיל הפנסיה קטן או שווה לגיל הנוכחי, מחזירים רק את הערך הנוכחי
+      setResults(baseResults);
+    }
   };
 
   const handleDateChange = (field, value) => {
@@ -219,7 +235,7 @@ const InvestmentCalculator = () => {
                     calculateInvestment();
                   }}
                   min="0"
-                  max="80"
+                  max="120"
                 />
               </div>
             </div>
@@ -260,10 +276,16 @@ const InvestmentCalculator = () => {
                   </Card>
                 </div>
 
-                {results.yearsToRetirement >= 0 && (
+                {results.futureValues && (
                   <div>
                     <div className="text-center text-xl font-semibold text-gray-800 mb-4">
-                      תחזית לגיל {retirementAge} {results.yearsToRetirement > 0 ? `(בעוד ${Math.floor(results.yearsToRetirement)} שנים)` : ''}
+                      תחזית לגיל {retirementAge} 
+                      {results.yearsToRetirement > 0 || results.monthsToRetirement > 0 ? 
+                        ` (בעוד ${results.yearsToRetirement > 0 ? `${results.yearsToRetirement} שנים` : ''}${
+                          results.yearsToRetirement > 0 && results.monthsToRetirement > 0 ? ' ו-' : ''
+                        }${results.monthsToRetirement > 0 ? `${results.monthsToRetirement} חודשים` : ''})` 
+                        : ''
+                      }
                     </div>
                     <div className="text-center text-sm text-gray-600 mb-6">
                       בהתבסס על הערך הנוכחי של התיק וממוצעי התשואה ההיסטוריים
