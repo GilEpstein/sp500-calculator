@@ -28,7 +28,6 @@ const InvestmentCalculator = () => {
           dynamicTyping: true,
           skipEmptyLines: true,
           complete: (results) => {
-            console.log('Data loaded:', results.data.length, 'rows');
             setSpData(results.data);
             setDataLoaded(true);
           },
@@ -53,13 +52,17 @@ const InvestmentCalculator = () => {
     const today = new Date('2025-01-01');
     const monthlyInvestment = 100;
     
-    // חישוב מדויק של מספר החודשים עד היום
-    const monthsDiff = (today.getFullYear() - birthDateObj.getFullYear()) * 12 + 
-                      (today.getMonth() - birthDateObj.getMonth());
-    const totalMonths = monthsDiff + (today.getDate() >= birthDateObj.getDate() ? 0 : -1);
+    // חישוב מדויק של מספר החודשים
+    let totalMonths = 0;
+    let currentDate = new Date(birthDateObj);
     
+    while (currentDate <= today) {
+      totalMonths++;
+      currentDate.setMonth(currentDate.getMonth() + 1);
+    }
+    
+    const totalInvested = totalMonths * monthlyInvestment;
     let units = 0;
-    let totalInvested = totalMonths * monthlyInvestment;
     const investmentData = [];
     let latestDate = '';
     
@@ -79,7 +82,7 @@ const InvestmentCalculator = () => {
         investmentData.push({
           date: `${year}-${month}`,
           value: currentValue,
-          invested: monthlyInvestment * investmentData.length
+          invested: monthlyInvestment * (investmentData.length + 1)
         });
       }
     }
@@ -103,19 +106,13 @@ const InvestmentCalculator = () => {
       parseInt(birthDate.day)
     );
     
-    // חישוב ההשקעה עד היום
+    // חישוב ערך נוכחי - לא תלוי בגיל פרישה
     const currentInvestment = calculateCurrentInvestment(birthDateObj);
     
-    // חישוב שנים לפנסיה (רק לתחזיות)
+    // חישוב שנים לפנסיה - רק עבור התחזיות
     const today = new Date('2025-01-01');
-    const retirementDate = new Date(birthDateObj);
-    retirementDate.setFullYear(birthDateObj.getFullYear() + retirementAge);
-    
-    const yearsToRetirement = Math.max(0, 
-      (retirementDate.getFullYear() - today.getFullYear()) +
-      (retirementDate.getMonth() - today.getMonth()) / 12 +
-      (retirementDate.getDate() - today.getDate()) / 365.25
-    );
+    const currentAge = today.getFullYear() - birthDateObj.getFullYear();
+    const yearsToRetirement = Math.max(0, retirementAge - currentAge);
     
     // חישוב תחזיות עתידיות
     const futureValues = {
@@ -153,8 +150,7 @@ const InvestmentCalculator = () => {
       maximumFractionDigits: 0
     }).format(Math.round(value));
   };
-
-  return (
+return (
     <div className="p-6 max-w-5xl mx-auto bg-gradient-to-b from-blue-50 to-white" dir="rtl">
       <Card className="shadow-xl border-none rounded-2xl overflow-hidden">
         <CardHeader className="bg-gradient-to-r from-blue-600 to-blue-400 text-white p-6">
@@ -261,7 +257,7 @@ const InvestmentCalculator = () => {
                 {results.yearsToRetirement >= 0 && (
                   <div>
                     <div className="text-center text-xl font-semibold text-gray-800 mb-4">
-                      תחזית לגיל {retirementAge} {results.yearsToRetirement > 0 ? `(בעוד ${Math.floor(results.yearsToRetirement)} שנים ו-${Math.round((results.yearsToRetirement % 1) * 12)} חודשים)` : ''}
+                      תחזית לגיל {retirementAge} {results.yearsToRetirement > 0 ? `(בעוד ${Math.floor(results.yearsToRetirement)} שנים)` : ''}
                     </div>
                     <div className="text-center text-sm text-gray-600 mb-6">
                       בהתבסס על הערך הנוכחי של התיק וממוצעי התשואה ההיסטוריים
@@ -326,7 +322,7 @@ const InvestmentCalculator = () => {
                   </CardHeader>
                   <CardContent className="p-6">
                     <div className="h-96">
-                     <ResponsiveContainer width="100%" height="100%">
+                      <ResponsiveContainer width="100%" height="100%">
                         <LineChart data={results.investmentData}>
                           <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
                           <XAxis dataKey="date" stroke="#6B7280" />
@@ -338,7 +334,7 @@ const InvestmentCalculator = () => {
                               borderRadius: '0.5rem',
                               border: 'none',
                               boxShadow: '0 2px 10px rgba(0, 0, 0, 0.1)'
-                            }}
+}}
                           />
                           <Legend />
                           <Line
