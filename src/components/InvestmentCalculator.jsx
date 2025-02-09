@@ -53,39 +53,36 @@ const InvestmentCalculator = () => {
     let totalUnits = 0;
     let totalInvested = 0;
     let prevMonth = null;
-    let startedInvesting = false;  // ✅ לוודא שההשקעה מתחילה רק מתאריך הלידה
+    let startedInvesting = false;
     const investmentData = [];
 
-    // ✅ שלב 1: סינון נתונים - נשמור רק את החודשים מתאריך הלידה ומעלה
     const filteredData = spData.filter(row => {
       if (!row.Month || !row.Closing) return false;
 
       let [day, month, year] = row.Month.split('/');
       day = parseInt(day);
-      month = parseInt(month) - 1; // כי חודשים ב-JavaScript מתחילים מ-0
+      month = parseInt(month) - 1;
       year = parseInt(year);
 
       const monthDate = new Date(year, month, day);
       return !isNaN(monthDate) && monthDate >= birthDateObj;
     });
 
-    // ✅ בדיקות Debug - לוודא שהתאריך הראשון נכון
     if (filteredData.length > 0) {
       console.log("Birth date selected:", birthDateObj.toLocaleDateString());
       console.log("First month after filtering:", filteredData[0].Month);
       console.log("Total months counted:", filteredData.length);
     }
 
-    // ✅ שלב 2: חישוב השקעה
     for (const row of filteredData) {
       const [day, month, year] = row.Month.split('/');
       const monthDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
       const yearMonth = `${year}-${month}`;
 
       if (!startedInvesting && monthDate >= birthDateObj) {
-        startedInvesting = true; // נתחיל לחשב השקעה
-        totalUnits = 0; // לא ניקח יחידות מהעבר
-        totalInvested = 0; // נתחיל את ההשקעה מחדש
+        startedInvesting = true;
+        totalUnits = 0;
+        totalInvested = 0;
       }
 
       if (startedInvesting && monthDate <= endDate && yearMonth !== prevMonth) {
@@ -106,7 +103,6 @@ const InvestmentCalculator = () => {
       }
     }
 
-    // ✅ חישוב שווי נוכחי
     const lastPrice = filteredData[filteredData.length - 1].Closing;
     const currentValue = totalUnits * lastPrice;
 
@@ -118,6 +114,27 @@ const InvestmentCalculator = () => {
       investmentData,
       latestDate: filteredData[filteredData.length - 1].Month
     });
+
+    // ✅ תיקון - Push מסונכרן ל-gh-pages
+    deployToGitHubPages();
+  };
+
+  const deployToGitHubPages = () => {
+    const exec = require("child_process").exec;
+
+    exec("git checkout gh-pages && git pull origin gh-pages --rebase && git add . && git commit -m 'Update GitHub Pages deployment' && git push origin gh-pages || git push origin gh-pages --force",
+      (error, stdout, stderr) => {
+        if (error) {
+          console.error(`Error deploying: ${error.message}`);
+          return;
+        }
+        if (stderr) {
+          console.error(`stderr: ${stderr}`);
+          return;
+        }
+        console.log(`stdout: ${stdout}`);
+      }
+    );
   };
 
   const handleDateChange = (field, value) => {
