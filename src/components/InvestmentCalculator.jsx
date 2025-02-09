@@ -297,6 +297,38 @@ const InvestmentCalculator = () => {
                       <Card className="bg-gradient-to-br from-orange-50 to-orange-100 shadow-md hover:shadow-lg transition-shadow">
                         <CardContent className="p-6">
                           <h3 className="text-base font-semibold text-orange-900 mb-2 text-center">
+                            תחזית שמרנית
+                            <div className="text-sm text-orange-700">
+                              לפי ממוצע 20 השנים האחרונות
+                              <br />
+                              תשואה שנתית: 9.27%
+                            </div>
+                          </h3>
+                          <p className="text-2xl font-bold text-orange-800 text-center mt-4">
+                            {formatCurrency(results.futureValues.scenario1)}
+                          </p>
+                        </CardContent>
+                      </Card>
+
+                      <Card className="bg-gradient-to-br from-orange-50 to-orange-100 shadow-md hover:shadow-lg transition-shadow">
+                        <CardContent className="p-6">
+                          <h3 className="text-base font-semibold text-orange-900 mb-2 text-center">
+                            תחזית מאוזנת
+                            <div className="text-sm text-orange-700">
+                              לפי ממוצע 10 השנים האחרונות
+                              <br />
+                              תשואה שנתית: 12.43%
+                            </div>
+                          </h3>
+                          <p className="text-2xl font-bold text-orange-800 text-center mt-4">
+                            {formatCurrency(results.futureValues.scenario2)}
+                          </p>
+                        </CardContent>
+                      </Card>
+
+                     <Card className="bg-gradient-to-br from-orange-50 to-orange-100 shadow-md hover:shadow-lg transition-shadow">
+                        <CardContent className="p-6">
+                          <h3 className="text-base font-semibold text-orange-900 mb-2 text-center">
                             תחזית אופטימית
                             <div className="text-sm text-orange-700">
                               לפי ממוצע 5 השנים האחרונות
@@ -367,35 +399,3 @@ const InvestmentCalculator = () => {
 };
 
 export default InvestmentCalculator;
-                        <CardContent className="p-6">
-                          <h3 className="text-base font-semibold text-orange-900 mb-2 text-center">
-                            תחזית שמרנית
-                            <div className="text-sm text-orange-700">
-                              לפי ממוצע 20 השנים האחרונות
-                              <br />
-                              תשואה שנתית: 9.27%
-                            </div>
-                          </h3>
-                          <p className="text-2xl font-bold text-orange-800 text-center mt-4">
-                            {formatCurrency(results.futureValues.scenario1)}
-                          </p>
-                        </CardContent>
-                      </Card>
-
-                      <Card className="bg-gradient-to-br from-orange-50 to-orange-100 shadow-md hover:shadow-lg transition-shadow">
-                        <CardContent className="p-6">
-                          <h3 className="text-base font-semibold text-orange-900 mb-2 text-center">
-                            תחזית מאוזנת
-                            <div className="text-sm text-orange-700">
-                              לפי ממוצע 10 השנים האחרונות
-                              <br />
-                              תשואה שנתית: 12.43%
-                            </div>
-                          </h3>
-                          <p className="text-2xl font-bold text-orange-800 text-center mt-4">
-                            {formatCurrency(results.futureValues.scenario2)}
-                          </p>
-                        </CardContent>
-                      </Card>
-
-                      <Card className="bg-gradient-to-br from-orange-50 to-orange-100 shadow-md hover:shadow-lg transition-shadow">
