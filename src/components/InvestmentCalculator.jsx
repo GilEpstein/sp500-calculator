@@ -350,4 +350,4 @@ const InvestmentCalculator = () => {
   );
 };
 
-export default Investment
+export default InvestmentCalculator;
