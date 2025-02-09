@@ -328,7 +328,7 @@ const InvestmentCalculator = () => {
                   </CardHeader>
                   <CardContent className="p-6">
                     <div className="h-96">
-                      <ResponsiveContainer width="100
+                      <ResponsiveContainer width="100%" height="100%">
 <Card className="shadow-md hover:shadow-lg transition-shadow">
   <CardHeader>
     <CardTitle className="text-center">
