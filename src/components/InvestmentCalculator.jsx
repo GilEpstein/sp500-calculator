@@ -48,7 +48,10 @@ const InvestmentCalculator = () => {
     return presentValue * Math.pow(1 + annualReturn, yearsWithMonths);
   };
 
-  const calculateCurrentInvestment = (birthDateObj) => {
+  // חישוב ערך ההשקעה עד היום
+  const calculateCurrentInvestmentValue = (birthDateObj) => {
+    if (!birthDate.year || !spData.length) return null;
+
     const lastDataRow = spData[spData.length - 1];
     const [lastDay, lastMonth, lastYear] = lastDataRow.Month.split('/');
     const lastDate = new Date(parseInt(lastYear), parseInt(lastMonth) - 1, parseInt(lastDay));
@@ -90,8 +93,49 @@ const InvestmentCalculator = () => {
     return {
       totalInvested,
       currentValue,
-      investmentData,
+      investmentData: investmentData.map(item => ({
+        ...item,
+        value: Math.round(item.value),
+        invested: Math.round(item.invested)
+      })),
       latestDate: lastDataRow.Month
+    };
+  };
+
+  // חישוב תחזית לגיל פרישה
+  const calculateRetirementForecast = (currentValue, birthDateObj, targetRetirementAge) => {
+    const lastDataRow = spData[spData.length - 1];
+    const [lastDay, lastMonth, lastYear] = lastDataRow.Month.split('/');
+    const lastDate = new Date(parseInt(lastYear), parseInt(lastMonth) - 1, parseInt(lastDay));
+    
+    // חישוב הגיל הנוכחי
+    const diffTime = lastDate - birthDateObj;
+    const currentAgeInMonths = Math.floor(diffTime / (1000 * 60 * 60 * 24 * 30.4375));
+    const currentAge = currentAgeInMonths / 12;
+
+    // אם כבר הגענו לגיל פרישה, אין צורך בתחזית
+    if (targetRetirementAge <= currentAge) {
+      return null;
+    }
+
+    // חישוב הזמן שנותר עד לפרישה
+    const retirementAgeInMonths = targetRetirementAge * 12;
+    const monthsToRetirement = retirementAgeInMonths - currentAgeInMonths;
+    const yearsToRetirement = Math.floor(monthsToRetirement / 12);
+    const remainingMonths = monthsToRetirement % 12;
+    
+    // חישוב תחזיות לפי תרחישים שונים
+    const yearsWithMonthsFraction = yearsToRetirement + (remainingMonths / 12);
+    const futureValues = {
+      scenario1: calculateFutureValue(currentValue, yearsWithMonthsFraction, 0.0927),
+      scenario2: calculateFutureValue(currentValue, yearsWithMonthsFraction, 0.1243),
+      scenario3: calculateFutureValue(currentValue, yearsWithMonthsFraction, 0.149)
+    };
+
+    return {
+      yearsToRetirement,
+      monthsToRetirement: remainingMonths,
+      futureValues
     };
   };
 
@@ -104,54 +148,22 @@ const InvestmentCalculator = () => {
       parseInt(birthDate.day)
     );
     
-    // שלב 1: חישוב הערך הנוכחי - תמיד מתבצע
-    const currentInvestment = calculateCurrentInvestment(birthDateObj);
+    // שלב 1: חישוב ערך ההשקעה עד היום
+    const currentInvestmentResults = calculateCurrentInvestmentValue(birthDateObj);
+    if (!currentInvestmentResults) return;
     
-    // חישוב הגיל הנוכחי
-    const lastDataRow = spData[spData.length - 1];
-    const [lastDay, lastMonth, lastYear] = lastDataRow.Month.split('/');
-    const lastDate = new Date(parseInt(lastYear), parseInt(lastMonth) - 1, parseInt(lastDay));
-    const diffTime = lastDate - birthDateObj;
-    const currentAgeInMonths = Math.floor(diffTime / (1000 * 60 * 60 * 24 * 30.4375));
-    const currentAge = currentAgeInMonths / 12;
-
-    // בסיס התוצאות - תמיד כולל את הערך הנוכחי
-    const baseResults = {
-      ...currentInvestment,
-      investmentData: currentInvestment.investmentData.map(item => ({
-        ...item,
-        value: Math.round(item.value),
-        invested: Math.round(item.invested)
-      }))
-    };
-
-    // שלב 2: חישוב תחזיות עתידיות - רק אם גיל הפנסיה גדול מהגיל הנוכחי
-    if (retirementAge > currentAge) {
-      const retirementAgeInMonths = retirementAge * 12;
-      const monthsToRetirement = retirementAgeInMonths - currentAgeInMonths;
-      
-      // חישוב שנים וחודשים שנשארו
-      const yearsToRetirement = Math.floor(monthsToRetirement / 12);
-      const remainingMonths = monthsToRetirement % 12;
-      
-      // חישוב תחזיות עתידיות
-      const yearsWithMonthsFraction = yearsToRetirement + (remainingMonths / 12);
-      const futureValues = {
-        scenario1: calculateFutureValue(currentInvestment.currentValue, yearsWithMonthsFraction, 0.0927),
-        scenario2: calculateFutureValue(currentInvestment.currentValue, yearsWithMonthsFraction, 0.1243),
-        scenario3: calculateFutureValue(currentInvestment.currentValue, yearsWithMonthsFraction, 0.149)
-      };
-
-      setResults({
-        ...baseResults,
-        yearsToRetirement,
-        monthsToRetirement: remainingMonths,
-        futureValues
-      });
-    } else {
-      // אם גיל הפנסיה קטן או שווה לגיל הנוכחי, מחזירים רק את הערך הנוכחי
-      setResults(baseResults);
-    }
+    // שלב 2: חישוב תחזית לגיל פרישה
+    const retirementResults = calculateRetirementForecast(
+      currentInvestmentResults.currentValue,
+      birthDateObj,
+      retirementAge
+    );
+    
+    // שילוב התוצאות
+    setResults({
+      ...currentInvestmentResults,
+      ...(retirementResults || {})
+    });
   };
 
   const handleDateChange = (field, value) => {
