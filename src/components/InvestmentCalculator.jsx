@@ -392,4 +392,3 @@ const InvestmentCalculator = () => {
 }
 
 export default InvestmentCalculator;
-```
