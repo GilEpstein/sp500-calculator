@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Papa from 'papaparse';
 
 const InvestmentCalculator = () => {
@@ -49,6 +49,8 @@ const InvestmentCalculator = () => {
   };
 
   const calculateCurrentInvestment = (birthDateObj) => {
+    if (!spData.length) return null;
+    
     const lastDataRow = spData[spData.length - 1];
     const [lastDay, lastMonth, lastYear] = lastDataRow.Month.split('/');
     const lastDate = new Date(parseInt(lastYear), parseInt(lastMonth) - 1, parseInt(lastDay));
@@ -105,14 +107,14 @@ const InvestmentCalculator = () => {
     );
     
     const currentInvestment = calculateCurrentInvestment(birthDateObj);
+    if (!currentInvestment) return;
+
     const lastDataRow = spData[spData.length - 1];
     const [lastDay, lastMonth, lastYear] = lastDataRow.Month.split('/');
     const lastDate = new Date(parseInt(lastYear), parseInt(lastMonth) - 1, parseInt(lastDay));
     const diffTime = lastDate - birthDateObj;
     const currentAgeInMonths = Math.floor(diffTime / (1000 * 60 * 60 * 24 * 30.4375));
     const currentAge = currentAgeInMonths / 12;
-
-    console.log(`Current Age: ${currentAge}, Retirement Age: ${retirementAge}`);
 
     const baseResults = {
       ...currentInvestment,
@@ -123,7 +125,8 @@ const InvestmentCalculator = () => {
       }))
     };
 
-    if (retirementAge > 0 && retirementAge > currentAge) {
+    // Only calculate future values if retirement age is provided and greater than current age
+    if (retirementAge && retirementAge > currentAge) {
       const retirementAgeInMonths = retirementAge * 12;
       const monthsToRetirement = retirementAgeInMonths - currentAgeInMonths;
       const yearsToRetirement = Math.floor(monthsToRetirement / 12);
@@ -136,8 +139,6 @@ const InvestmentCalculator = () => {
         scenario3: calculateFutureValue(currentInvestment.currentValue, yearsWithMonthsFraction, 0.149)
       };
 
-      console.log(`Future Values: `, futureValues);
-
       setResults({
         ...baseResults,
         yearsToRetirement,
@@ -145,6 +146,7 @@ const InvestmentCalculator = () => {
         futureValues
       });
     } else {
+      // If no retirement age or retirement age is less than current age, only show current values
       setResults(baseResults);
     }
   };
@@ -227,7 +229,7 @@ const InvestmentCalculator = () => {
                   value={retirementAge}
                   onChange={(e) => {
                     setRetirementAge(Number(e.target.value));
-                    calculateInvestment();
+                    setTimeout(calculateInvestment, 0);
                   }}
                   min="0"
                   max="120"
@@ -388,6 +390,6 @@ const InvestmentCalculator = () => {
       </Card>
     </div>
   );
-}
+};
 
 export default InvestmentCalculator;
