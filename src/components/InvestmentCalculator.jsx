@@ -11,7 +11,7 @@ const InvestmentCalculator = () => {
   const [spData, setSpData] = useState([]);
   const [results, setResults] = useState(null);
   const [error, setError] = useState(null);
-  
+
   useEffect(() => {
     const loadData = async () => {
       try {
@@ -47,26 +47,33 @@ const InvestmentCalculator = () => {
       parseInt(birthDate.month) - 1, 
       parseInt(birthDate.day)
     );
-    
-    const endDate = new Date(2025, 0, 31); 
+
+    const endDate = new Date(2025, 0, 31);
     const monthlyInvestment = 100;
     let totalUnits = 0;
     let totalInvested = 0;
     let prevMonth = null;
+    let startedInvesting = false;  // ✅ לוודא שההשקעה מתחילה רק מתאריך הלידה
     const investmentData = [];
 
     // ✅ שלב 1: סינון נתונים - נשמור רק את החודשים מתאריך הלידה ומעלה
     const filteredData = spData.filter(row => {
       if (!row.Month || !row.Closing) return false;
-      const [day, month, year] = row.Month.split('/');
-      const monthDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
-      return monthDate >= birthDateObj;
+
+      let [day, month, year] = row.Month.split('/');
+      day = parseInt(day);
+      month = parseInt(month) - 1; // כי חודשים ב-JavaScript מתחילים מ-0
+      year = parseInt(year);
+
+      const monthDate = new Date(year, month, day);
+      return !isNaN(monthDate) && monthDate >= birthDateObj;
     });
 
     // ✅ בדיקות Debug - לוודא שהתאריך הראשון נכון
     if (filteredData.length > 0) {
       console.log("Birth date selected:", birthDateObj.toLocaleDateString());
       console.log("First month after filtering:", filteredData[0].Month);
+      console.log("Total months counted:", filteredData.length);
     }
 
     // ✅ שלב 2: חישוב השקעה
@@ -75,7 +82,13 @@ const InvestmentCalculator = () => {
       const monthDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
       const yearMonth = `${year}-${month}`;
 
-      if (monthDate <= endDate && yearMonth !== prevMonth) {
+      if (!startedInvesting && monthDate >= birthDateObj) {
+        startedInvesting = true; // נתחיל לחשב השקעה
+        totalUnits = 0; // לא ניקח יחידות מהעבר
+        totalInvested = 0; // נתחיל את ההשקעה מחדש
+      }
+
+      if (startedInvesting && monthDate <= endDate && yearMonth !== prevMonth) {
         const unitsThisMonth = monthlyInvestment / row.Closing;
         totalUnits += unitsThisMonth;
         totalInvested += monthlyInvestment;
@@ -139,7 +152,7 @@ const InvestmentCalculator = () => {
           </p>
           <p className="text-sm opacity-90 text-center">@פרופ' גיל</p>
         </CardHeader>
-        
+
         <CardContent className="p-8">
           <div className="grid grid-cols-3 gap-6">
             {['day', 'month', 'year'].map((field, index) => (
