@@ -115,8 +115,6 @@ const InvestmentCalculator = () => {
     const diffTime = lastDate - birthDateObj;
     const currentAgeInMonths = Math.floor(diffTime / (1000 * 60 * 60 * 24 * 30.4375));
     const currentAge = currentAgeInMonths / 12;
-    
-    console.log('Current Age:', currentAge, 'Retirement Age:', retirementAge);
 
     const baseResults = {
       ...currentInvestment,
@@ -127,28 +125,34 @@ const InvestmentCalculator = () => {
       }))
     };
 
-    // Only calculate future values if retirement age is strictly greater than current age
+    // Calculate future values only if retirement age is greater than current age
     if (retirementAge > currentAge) {
-      const retirementAgeInMonths = retirementAge * 12;
-      const monthsToRetirement = retirementAgeInMonths - currentAgeInMonths;
-      const yearsToRetirement = Math.floor(monthsToRetirement / 12);
+      // Calculate total months to retirement
+      const monthsToRetirement = (retirementAge * 12) - currentAgeInMonths;
+      
+      // Calculate complete years and remaining months
+      const completeYears = Math.floor(monthsToRetirement / 12);
       const remainingMonths = monthsToRetirement % 12;
       
-      const yearsWithMonthsFraction = yearsToRetirement + (remainingMonths / 12);
+      // For the future value calculation, we need the total time in years (including partial years)
+      const totalYearsToRetirement = monthsToRetirement / 12;
+      
+      console.log(`Current Age: ${currentAge}, Complete Years: ${completeYears}, Remaining Months: ${remainingMonths}`);
+      console.log(`Total Years (for calculation): ${totalYearsToRetirement}`);
+      
       const futureValues = {
-        scenario1: calculateFutureValue(currentInvestment.currentValue, yearsWithMonthsFraction, 0.0927),
-        scenario2: calculateFutureValue(currentInvestment.currentValue, yearsWithMonthsFraction, 0.1243),
-        scenario3: calculateFutureValue(currentInvestment.currentValue, yearsWithMonthsFraction, 0.149)
+        scenario1: calculateFutureValue(currentInvestment.currentValue, totalYearsToRetirement, 0.0927),
+        scenario2: calculateFutureValue(currentInvestment.currentValue, totalYearsToRetirement, 0.1243),
+        scenario3: calculateFutureValue(currentInvestment.currentValue, totalYearsToRetirement, 0.149)
       };
 
       setResults({
         ...baseResults,
-        yearsToRetirement,
+        yearsToRetirement: completeYears,
         monthsToRetirement: remainingMonths,
         futureValues
       });
     } else {
-      // If no retirement age or retirement age is less than current age, only show current values
       setResults(baseResults);
     }
   };
@@ -293,38 +297,6 @@ const InvestmentCalculator = () => {
                       <Card className="bg-gradient-to-br from-orange-50 to-orange-100 shadow-md hover:shadow-lg transition-shadow">
                         <CardContent className="p-6">
                           <h3 className="text-base font-semibold text-orange-900 mb-2 text-center">
-                            תחזית שמרנית
-                            <div className="text-sm text-orange-700">
-                              לפי ממוצע 20 השנים האחרונות
-                              <br />
-                              תשואה שנתית: 9.27%
-                            </div>
-                          </h3>
-                          <p className="text-2xl font-bold text-orange-800 text-center mt-4">
-                            {formatCurrency(results.futureValues.scenario1)}
-                          </p>
-                        </CardContent>
-                      </Card>
-
-                      <Card className="bg-gradient-to-br from-orange-50 to-orange-100 shadow-md hover:shadow-lg transition-shadow">
-                        <CardContent className="p-6">
-                          <h3 className="text-base font-semibold text-orange-900 mb-2 text-center">
-                            תחזית מאוזנת
-                            <div className="text-sm text-orange-700">
-                              לפי ממוצע 10 השנים האחרונות
-                              <br />
-                              תשואה שנתית: 12.43%
-                            </div>
-                          </h3>
-                          <p className="text-2xl font-bold text-orange-800 text-center mt-4">
-                            {formatCurrency(results.futureValues.scenario2)}
-                          </p>
-                        </CardContent>
-                      </Card>
-
-                      <Card className="bg-gradient-to-br from-orange-50 to-orange-100 shadow-md hover:shadow-lg transition-shadow">
-                        <CardContent className="p-6">
-                          <h3 className="text-base font-semibold text-orange-900 mb-2 text-center">
                             תחזית אופטימית
                             <div className="text-sm text-orange-700">
                               לפי ממוצע 5 השנים האחרונות
@@ -395,3 +367,35 @@ const InvestmentCalculator = () => {
 };
 
 export default InvestmentCalculator;
+                        <CardContent className="p-6">
+                          <h3 className="text-base font-semibold text-orange-900 mb-2 text-center">
+                            תחזית שמרנית
+                            <div className="text-sm text-orange-700">
+                              לפי ממוצע 20 השנים האחרונות
+                              <br />
+                              תשואה שנתית: 9.27%
+                            </div>
+                          </h3>
+                          <p className="text-2xl font-bold text-orange-800 text-center mt-4">
+                            {formatCurrency(results.futureValues.scenario1)}
+                          </p>
+                        </CardContent>
+                      </Card>
+
+                      <Card className="bg-gradient-to-br from-orange-50 to-orange-100 shadow-md hover:shadow-lg transition-shadow">
+                        <CardContent className="p-6">
+                          <h3 className="text-base font-semibold text-orange-900 mb-2 text-center">
+                            תחזית מאוזנת
+                            <div className="text-sm text-orange-700">
+                              לפי ממוצע 10 השנים האחרונות
+                              <br />
+                              תשואה שנתית: 12.43%
+                            </div>
+                          </h3>
+                          <p className="text-2xl font-bold text-orange-800 text-center mt-4">
+                            {formatCurrency(results.futureValues.scenario2)}
+                          </p>
+                        </CardContent>
+                      </Card>
+
+                      <Card className="bg-gradient-to-br from-orange-50 to-orange-100 shadow-md hover:shadow-lg transition-shadow">
