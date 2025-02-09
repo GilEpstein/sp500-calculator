@@ -60,7 +60,7 @@ const InvestmentCalculator = () => {
     const today = new Date('2025-01-01');
     const monthlyInvestment = 100;
     
-    // חישוב מדויק של מספר החודשים
+    // חישוב מדויק של מספר החודשים עד היום
     const monthsDiff = (today.getFullYear() - birthDateObj.getFullYear()) * 12 + 
                       (today.getMonth() - birthDateObj.getMonth());
     const totalMonths = monthsDiff + (today.getDate() >= birthDateObj.getDate() ? 0 : -1);
@@ -70,7 +70,7 @@ const InvestmentCalculator = () => {
     const investmentData = [];
     let latestDate = '';
     
-    // חישוב היחידות והערך הנוכחי
+    // חישוב היחידות והערך הנוכחי (תמיד עד סוף 2024)
     for (const row of spData) {
       if (!row.Month || !row.Closing) continue;
       
@@ -80,10 +80,9 @@ const InvestmentCalculator = () => {
       if (monthDate >= birthDateObj && monthDate <= today) {
         const newUnits = monthlyInvestment / row.Closing;
         units += newUnits;
-        
-        const currentValue = units * row.Closing;
         latestDate = row.Month;
         
+        const currentValue = units * row.Closing;
         investmentData.push({
           date: `${year}-${month}`,
           value: currentValue,
@@ -94,7 +93,8 @@ const InvestmentCalculator = () => {
 
     const currentValue = units * spData[spData.length-1].Closing;
     
-    // חישוב מדויק של שנים ועודף חודשים עד גיל פרישה
+    // חישוב שנים לפנסיה (משומש רק לתחזיות)
+    const birthYear = parseInt(birthDate.year);
     const retirementDate = new Date(birthDateObj);
     retirementDate.setFullYear(birthDateObj.getFullYear() + retirementAge);
     
@@ -322,7 +322,7 @@ const InvestmentCalculator = () => {
                           <YAxis stroke="#6B7280" />
                           <Tooltip
                             formatter={(value) => formatCurrency(value)}
-                           contentStyle={{
+                            contentStyle={{
                               backgroundColor: 'rgba(255, 255, 255, 0.95)',
                               borderRadius: '0.5rem',
                               border: 'none',
