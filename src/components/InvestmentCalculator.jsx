@@ -222,7 +222,7 @@ const InvestmentCalculator = () => {
           </div>
         </CardContent>
       </Card>
-    </div>
+    </div> 
   );
 };
 
