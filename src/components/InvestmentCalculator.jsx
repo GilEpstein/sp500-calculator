@@ -326,7 +326,7 @@ const InvestmentCalculator = () => {
                             <div className="text-sm text-orange-700">
                               לפי ממוצע 10 השנים האחרונות
                               <br />
-                              תשואה שנתית: 12.43%
+תשואה שנתית: 12.43%
                             </div>
                           </h3>
                           <p className="text-2xl font-bold text-orange-800 text-center mt-4">
