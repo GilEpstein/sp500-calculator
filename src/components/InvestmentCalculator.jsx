@@ -1,4 +1,4 @@
-Here is the full updated code for `InvestmentCalculator.jsx` with added debugging statements for better insights:
+It appears that the file has additional text that should not be there, such as "Here is the full updated code for `InvestmentCalculator.jsx` with added debugging statements for better insights:". Please replace the entire content of `InvestmentCalculator.jsx` with the corrected code below:
 
 ```javascript
 import React, { useState, useEffect } from 'react';
