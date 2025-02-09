@@ -44,8 +44,8 @@ const InvestmentCalculator = () => {
     loadData();
   }, []);
 
-  const calculateFutureValue = (presentValue, yearsWithMonths, annualReturn) => {
-    return presentValue * Math.pow(1 + annualReturn, yearsWithMonths);
+  const calculateFutureValue = (presentValue, years, annualReturn) => {
+    return presentValue * Math.pow(1 + annualReturn, years);
   };
 
   const calculateCurrentInvestment = (birthDateObj) => {
@@ -104,10 +104,8 @@ const InvestmentCalculator = () => {
       parseInt(birthDate.day)
     );
     
-    // שלב 1: חישוב הערך הנוכחי - תמיד מתבצע
     const currentInvestment = calculateCurrentInvestment(birthDateObj);
     
-    // חישוב הגיל הנוכחי
     const lastDataRow = spData[spData.length - 1];
     const [lastDay, lastMonth, lastYear] = lastDataRow.Month.split('/');
     const lastDate = new Date(parseInt(lastYear), parseInt(lastMonth) - 1, parseInt(lastDay));
@@ -115,7 +113,6 @@ const InvestmentCalculator = () => {
     const currentAgeInMonths = Math.floor(diffTime / (1000 * 60 * 60 * 24 * 30.4375));
     const currentAge = currentAgeInMonths / 12;
 
-    // בסיס התוצאות - תמיד כולל את הערך הנוכחי
     const baseResults = {
       ...currentInvestment,
       investmentData: currentInvestment.investmentData.map(item => ({
@@ -125,16 +122,12 @@ const InvestmentCalculator = () => {
       }))
     };
 
-    // שלב 2: חישוב תחזיות עתידיות - רק אם גיל הפנסיה גדול מהגיל הנוכחי
     if (retirementAge > currentAge) {
       const retirementAgeInMonths = retirementAge * 12;
       const monthsToRetirement = retirementAgeInMonths - currentAgeInMonths;
-      
-      // חישוב שנים וחודשים שנשארו
       const yearsToRetirement = Math.floor(monthsToRetirement / 12);
       const remainingMonths = monthsToRetirement % 12;
       
-      // חישוב תחזיות עתידיות
       const yearsWithMonthsFraction = yearsToRetirement + (remainingMonths / 12);
       const futureValues = {
         scenario1: calculateFutureValue(currentInvestment.currentValue, yearsWithMonthsFraction, 0.0927),
@@ -149,7 +142,6 @@ const InvestmentCalculator = () => {
         futureValues
       });
     } else {
-      // אם גיל הפנסיה קטן או שווה לגיל הנוכחי, מחזירים רק את הערך הנוכחי
       setResults(baseResults);
     }
   };
