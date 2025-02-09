@@ -1,6 +1,4 @@
-I have analyzed the code and the changes made to `InvestmentCalculator.jsx`. It seems that the logic for calculating the investment based on the retirement age might be causing the issue. Let's ensure the retirement age is correctly handled and displayed.
-
-Here is the updated code for `InvestmentCalculator.jsx` with necessary fixes:
+Here is the full updated code for `InvestmentCalculator.jsx` with added debugging statements for better insights:
 
 ```javascript
 import React, { useState, useEffect } from 'react';
@@ -110,13 +108,14 @@ const InvestmentCalculator = () => {
     );
     
     const currentInvestment = calculateCurrentInvestment(birthDateObj);
-    
     const lastDataRow = spData[spData.length - 1];
     const [lastDay, lastMonth, lastYear] = lastDataRow.Month.split('/');
     const lastDate = new Date(parseInt(lastYear), parseInt(lastMonth) - 1, parseInt(lastDay));
     const diffTime = lastDate - birthDateObj;
     const currentAgeInMonths = Math.floor(diffTime / (1000 * 60 * 60 * 24 * 30.4375));
     const currentAge = currentAgeInMonths / 12;
+
+    console.log(`Current Age: ${currentAge}, Retirement Age: ${retirementAge}`);
 
     const baseResults = {
       ...currentInvestment,
@@ -139,6 +138,8 @@ const InvestmentCalculator = () => {
         scenario2: calculateFutureValue(currentInvestment.currentValue, yearsWithMonthsFraction, 0.1243),
         scenario3: calculateFutureValue(currentInvestment.currentValue, yearsWithMonthsFraction, 0.149)
       };
+
+      console.log(`Future Values: `, futureValues);
 
       setResults({
         ...baseResults,
@@ -394,5 +395,3 @@ const InvestmentCalculator = () => {
 
 export default InvestmentCalculator;
 ```
-
-Please update your code with this snippet and test it again. Let me know if the issue is resolved.
