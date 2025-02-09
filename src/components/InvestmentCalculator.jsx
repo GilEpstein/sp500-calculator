@@ -1,3 +1,6 @@
+Here is the updated full code for `InvestmentCalculator.jsx`:
+
+```javascript
 import React, { useState, useEffect } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
@@ -122,7 +125,7 @@ const InvestmentCalculator = () => {
       }))
     };
 
-    if (retirementAge > currentAge) {
+    if (retirementAge > 0 && retirementAge > currentAge) {
       const retirementAgeInMonths = retirementAge * 12;
       const monthsToRetirement = retirementAgeInMonths - currentAgeInMonths;
       const yearsToRetirement = Math.floor(monthsToRetirement / 12);
@@ -388,3 +391,4 @@ const InvestmentCalculator = () => {
 }
 
 export default InvestmentCalculator;
+```
