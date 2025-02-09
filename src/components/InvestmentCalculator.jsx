@@ -49,14 +49,7 @@ const InvestmentCalculator = () => {
     return presentValue * Math.pow(1 + annualReturn, yearsToRetirement);
   };
 
-  const calculateInvestment = () => {
-    if (!birthDate.year || !spData.length) return;
-
-    const birthDateObj = new Date(
-      parseInt(birthDate.year), 
-      parseInt(birthDate.month) - 1, 
-      parseInt(birthDate.day)
-    );
+  const calculateCurrentInvestment = (birthDateObj) => {
     const today = new Date('2025-01-01');
     const monthlyInvestment = 100;
     
@@ -66,7 +59,7 @@ const InvestmentCalculator = () => {
     const totalMonths = monthsDiff + (today.getDate() >= birthDateObj.getDate() ? 0 : -1);
     
     let units = 0;
-    let totalInvested = totalMonths * monthlyInvestment; // חישוב ישיר של סך ההשקעה
+    let totalInvested = totalMonths * monthlyInvestment;
     const investmentData = [];
     let latestDate = '';
     
@@ -93,8 +86,28 @@ const InvestmentCalculator = () => {
 
     const currentValue = units * spData[spData.length-1].Closing;
     
-    // חישוב שנים לפנסיה (משומש רק לתחזיות)
-    const birthYear = parseInt(birthDate.year);
+    return {
+      totalInvested,
+      currentValue,
+      investmentData,
+      latestDate
+    };
+  };
+
+  const calculateInvestment = () => {
+    if (!birthDate.year || !spData.length) return;
+
+    const birthDateObj = new Date(
+      parseInt(birthDate.year), 
+      parseInt(birthDate.month) - 1, 
+      parseInt(birthDate.day)
+    );
+    
+    // חישוב ההשקעה עד היום
+    const currentInvestment = calculateCurrentInvestment(birthDateObj);
+    
+    // חישוב שנים לפנסיה (רק לתחזיות)
+    const today = new Date('2025-01-01');
     const retirementDate = new Date(birthDateObj);
     retirementDate.setFullYear(birthDateObj.getFullYear() + retirementAge);
     
@@ -106,20 +119,18 @@ const InvestmentCalculator = () => {
     
     // חישוב תחזיות עתידיות
     const futureValues = {
-      scenario1: calculateFutureValue(currentValue, yearsToRetirement, 0.0927),
-      scenario2: calculateFutureValue(currentValue, yearsToRetirement, 0.1243),
-      scenario3: calculateFutureValue(currentValue, yearsToRetirement, 0.149)
+      scenario1: calculateFutureValue(currentInvestment.currentValue, yearsToRetirement, 0.0927),
+      scenario2: calculateFutureValue(currentInvestment.currentValue, yearsToRetirement, 0.1243),
+      scenario3: calculateFutureValue(currentInvestment.currentValue, yearsToRetirement, 0.149)
     };
     
     setResults({
-      totalInvested,
-      currentValue,
-      investmentData: investmentData.map(item => ({
+      ...currentInvestment,
+      investmentData: currentInvestment.investmentData.map(item => ({
         ...item,
         value: Math.round(item.value),
         invested: Math.round(item.invested)
       })),
-      latestDate,
       yearsToRetirement,
       futureValues
     });
@@ -315,7 +326,7 @@ const InvestmentCalculator = () => {
                   </CardHeader>
                   <CardContent className="p-6">
                     <div className="h-96">
-                      <ResponsiveContainer width="100%" height="100%">
+                     <ResponsiveContainer width="100%" height="100%">
                         <LineChart data={results.investmentData}>
                           <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
                           <XAxis dataKey="date" stroke="#6B7280" />
