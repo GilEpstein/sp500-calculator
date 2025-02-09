@@ -339,3 +339,15 @@ const InvestmentCalculator = () => {
                         </LineChart>
                       </ResponsiveContainer>
                     </div>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+};
+
+export default Investment
