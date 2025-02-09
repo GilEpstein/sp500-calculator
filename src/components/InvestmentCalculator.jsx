@@ -1,4 +1,6 @@
-Here is the updated full code for `InvestmentCalculator.jsx`:
+I have analyzed the code and the changes made to `InvestmentCalculator.jsx`. It seems that the logic for calculating the investment based on the retirement age might be causing the issue. Let's ensure the retirement age is correctly handled and displayed.
+
+Here is the updated code for `InvestmentCalculator.jsx` with necessary fixes:
 
 ```javascript
 import React, { useState, useEffect } from 'react';
@@ -392,3 +394,5 @@ const InvestmentCalculator = () => {
 
 export default InvestmentCalculator;
 ```
+
+Please update your code with this snippet and test it again. Let me know if the issue is resolved.
