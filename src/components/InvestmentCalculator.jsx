@@ -118,21 +118,29 @@ const InvestmentCalculator = () => {
     const [lastDay, lastMonth, lastYear] = lastDataRow.Month.split('/');
     const lastDate = new Date(parseInt(lastYear), parseInt(lastMonth) - 1, parseInt(lastDay));
     
-    // חישוב שנים לפנסיה
-    const retirementDate = new Date(
-      birthDateObj.getFullYear() + retirementAge,
-      birthDateObj.getMonth(),
-      birthDateObj.getDate()
-    );
+    let futureValues;
+    let yearsToRetirement;
     
-    const yearsToRetirement = (retirementDate - lastDate) / (1000 * 60 * 60 * 24 * 365.25);
-    
-    // חישוב תחזיות עתידיות
-    const futureValues = {
-      scenario1: calculateFutureValue(currentInvestment.currentValue, yearsToRetirement, 0.0927),
-      scenario2: calculateFutureValue(currentInvestment.currentValue, yearsToRetirement, 0.1243),
-      scenario3: calculateFutureValue(currentInvestment.currentValue, yearsToRetirement, 0.149)
-    };
+    if (retirementAge === 0) {
+      // אם גיל פרישה הוא 0, מחזירים את הערך הנוכחי
+      futureValues = {
+        scenario1: currentInvestment.currentValue,
+        scenario2: currentInvestment.currentValue,
+        scenario3: currentInvestment.currentValue
+      };
+      yearsToRetirement = 0;
+    } else {
+      // חישוב גיל נוכחי
+      const currentAge = (lastDate - birthDateObj) / (1000 * 60 * 60 * 24 * 365.25);
+      yearsToRetirement = Math.max(0, retirementAge - currentAge);
+      
+      // חישוב תחזיות עתידיות
+      futureValues = {
+        scenario1: calculateFutureValue(currentInvestment.currentValue, yearsToRetirement, 0.0927),
+        scenario2: calculateFutureValue(currentInvestment.currentValue, yearsToRetirement, 0.1243),
+        scenario3: calculateFutureValue(currentInvestment.currentValue, yearsToRetirement, 0.149)
+      };
+    }
     
     setResults({
       ...currentInvestment,
@@ -226,7 +234,7 @@ const InvestmentCalculator = () => {
                     setRetirementAge(Number(e.target.value));
                     calculateInvestment();
                   }}
-                  min="60"
+                  min="0"
                   max="80"
                 />
               </div>
@@ -316,7 +324,8 @@ const InvestmentCalculator = () => {
                             <div className="text-sm text-orange-700">
                               לפי ממוצע 5 השנים האחרונות
                               <br />
-                              תשואה שנתית: 14.9%
+                              תשואה שנת
+ית: 14.9%
                             </div>
                           </h3>
                           <p className="text-2xl font-bold text-orange-800 text-center mt-4">
