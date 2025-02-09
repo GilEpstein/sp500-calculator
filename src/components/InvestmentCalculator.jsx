@@ -45,6 +45,10 @@ const InvestmentCalculator = () => {
     loadData();
   }, []);
 
+  const calculateFutureValue = (presentValue, yearsToRetirement, annualReturn) => {
+    return presentValue * Math.pow(1 + annualReturn, yearsToRetirement);
+  };
+
   const calculateInvestment = () => {
     if (!birthDate.year || !spData.length) return;
 
@@ -86,6 +90,18 @@ const InvestmentCalculator = () => {
     const currentValue = units * spData[spData.length-1].Closing;
     const yearlyReturn = currentValue * 0.149;
     
+    // Calculate years until retirement
+    const birthYear = parseInt(birthDate.year);
+    const currentAge = today.getFullYear() - birthYear;
+    const yearsToRetirement = retirementAge - currentAge;
+    
+    // Calculate future values based on different scenarios
+    const futureValues = {
+      scenario1: calculateFutureValue(currentValue, yearsToRetirement, 0.0927), // 20 years avg
+      scenario2: calculateFutureValue(currentValue, yearsToRetirement, 0.1243), // 10 years avg
+      scenario3: calculateFutureValue(currentValue, yearsToRetirement, 0.149)   // 5 years avg
+    };
+    
     setResults({
       totalInvested,
       currentValue,
@@ -95,7 +111,9 @@ const InvestmentCalculator = () => {
         value: Math.round(item.value),
         invested: Math.round(item.invested)
       })),
-      latestDate
+      latestDate,
+      yearsToRetirement,
+      futureValues
     });
   };
 
@@ -197,7 +215,7 @@ const InvestmentCalculator = () => {
                   נכון לתאריך: {results.latestDate}
                 </div>
                 
-                <div className="grid grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
                   <Card className="bg-gradient-to-br from-blue-50 to-blue-100 shadow-md hover:shadow-lg transition-shadow">
                     <CardContent className="p-6">
                       <h3 className="text-lg font-semibold text-blue-900 mb-2 text-center">
@@ -208,6 +226,7 @@ const InvestmentCalculator = () => {
                       </p>
                     </CardContent>
                   </Card>
+                  
                   <Card className="bg-gradient-to-br from-green-50 to-green-100 shadow-md hover:shadow-lg transition-shadow">
                     <CardContent className="p-6">
                       <h3 className="text-lg font-semibold text-green-900 mb-2 text-center">
@@ -218,6 +237,49 @@ const InvestmentCalculator = () => {
                       </p>
                     </CardContent>
                   </Card>
+
+                  {results.yearsToRetirement > 0 && (
+                    <>
+                      <Card className="bg-gradient-to-br from-orange-50 to-orange-100 shadow-md hover:shadow-lg transition-shadow">
+                        <CardContent className="p-6">
+                          <h3 className="text-sm font-semibold text-orange-900 mb-2 text-center">
+                            תחזית שמרנית
+                            <br />
+                            <span className="text-xs">(9.27%)</span>
+                          </h3>
+                          <p className="text-2xl font-bold text-orange-800 text-center">
+                            {formatCurrency(results.futureValues.scenario1)}
+                          </p>
+                        </CardContent>
+                      </Card>
+
+                      <Card className="bg-gradient-to-br from-orange-50 to-orange-100 shadow-md hover:shadow-lg transition-shadow">
+                        <CardContent className="p-6">
+                          <h3 className="text-sm font-semibold text-orange-900 mb-2 text-center">
+                            תחזית מאוזנת
+                            <br />
+                            <span className="text-xs">(12.43%)</span>
+                          </h3>
+                          <p className="text-2xl font-bold text-orange-800 text-center">
+                            {formatCurrency(results.futureValues.scenario2)}
+                          </p>
+                        </CardContent>
+                      </Card>
+
+                      <Card className="bg-gradient-to-br from-orange-50 to-orange-100 shadow-md hover:shadow-lg transition-shadow">
+                        <CardContent className="p-6">
+                          <h3 className="text-sm font-semibold text-orange-900 mb-2 text-center">
+                            תחזית אופטימית
+                            <br />
+                            <span className="text-xs">(14.9%)</span>
+                          </h3>
+                          <p className="text-2xl font-bold text-orange-800 text-center">
+                            {formatCurrency(results.futureValues.scenario3)}
+                          </p>
+                        </CardContent>
+                      </Card>
+                    </>
+                  )}
                 </div>
 
                 <Card className="bg-gradient-to-br from-purple-50 to-purple-100 shadow-md hover:shadow-lg transition-shadow">
