@@ -107,19 +107,29 @@ const InvestmentCalculator = () => {
     // שלב 1: חישוב הערך הנוכחי - תמיד מתבצע
     const currentInvestment = calculateCurrentInvestment(birthDateObj);
     
-    // חישוב הגיל הנוכחי
+    // חישוב הגיל הנוכחי - שיטה חדשה
     const lastDataRow = spData[spData.length - 1];
     const [lastDay, lastMonth, lastYear] = lastDataRow.Month.split('/');
-    const lastDate = new Date(parseInt(lastYear), parseInt(lastMonth) - 1, parseInt(lastDay));
-    const diffTime = lastDate - birthDateObj;
-    const currentAgeInMonths = Math.floor(diffTime / (1000 * 60 * 60 * 24 * 30.4375));
-    const currentAge = currentAgeInMonths / 12;
+    
+    // חישוב ההפרש בשנים
+    let currentAge = parseInt(lastYear) - parseInt(birthDate.year);
+    
+    // התאמה לפי חודש ויום
+    if (parseInt(lastMonth) < parseInt(birthDate.month) || 
+       (parseInt(lastMonth) === parseInt(birthDate.month) && 
+        parseInt(lastDay) < parseInt(birthDate.day))) {
+      currentAge--;
+    }
 
-    // שורות דיבאג חדשות
-    console.log('בדיקת ערכים:');
+    // חישוב מספר החודשים המדויק לצורך חישובים עתידיים
+    const currentAgeInMonths = currentAge * 12 + 
+      (parseInt(lastMonth) - parseInt(birthDate.month)) +
+      (parseInt(lastDay) >= parseInt(birthDate.day) ? 1 : 0);
+
+    console.log('בדיקת ערכים חדשה:');
     console.log('גיל נוכחי:', currentAge);
     console.log('גיל פרישה:', retirementAge);
-    console.log('האם צריך להציג תחזיות:', retirementAge > Math.floor(currentAge));
+    console.log('האם צריך להציג תחזיות:', retirementAge > currentAge);
 
     // בסיס התוצאות - תמיד כולל את הערך הנוכחי
     const baseResults = {
@@ -132,7 +142,7 @@ const InvestmentCalculator = () => {
     };
 
     // שלב 2: חישוב תחזיות עתידיות - רק אם גיל הפנסיה גדול מהגיל הנוכחי
-    if (retirementAge > Math.floor(currentAge)) {
+    if (retirementAge > currentAge) {
       const retirementAgeInMonths = retirementAge * 12;
       const monthsToRetirement = retirementAgeInMonths - currentAgeInMonths;
       
@@ -313,13 +323,13 @@ const InvestmentCalculator = () => {
                         </CardContent>
                       </Card>
 
-                      <Card className="bg-gradient-to-br from-orange-50 to-orange-100 shadow-md hover:shadow-lg transition-shadow">
+                      <Card className="bg-gradient-to-br from-orange-50 to-orange-100 shadow-
+shadow-md hover:shadow-lg transition-shadow">
                         <CardContent className="p-6">
                           <h3 className="text-base font-semibold text-orange-900 mb-2 text-center">
                             תחזית מאוזנת
                             <div className="text-sm text-orange-700">
-                              לפי ממוצע 10
-השנים האחרונות
+                              לפי ממוצע 10 השנים האחרונות
                               <br />
                               תשואה שנתית: 12.43%
                             </div>
