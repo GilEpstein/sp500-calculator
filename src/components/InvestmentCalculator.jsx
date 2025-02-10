@@ -15,60 +15,39 @@ const InvestmentCalculator = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [spData, setSpData] = useState([]);
 
-  // Create sample data for testing if file loading fails
-  const createSampleData = () => {
-    return Array.from({ length: 72 }, (_, index) => {
-      const baseValue = 100;
-      const monthlyGrowth = 0.005; // 0.5% monthly growth
-      const value = baseValue * Math.pow(1 + monthlyGrowth, index);
-      
-      const date = new Date(2018, 0, 1);
-      date.setMonth(date.getMonth() + index);
-      
-      return {
-        Month: `1/${date.getMonth() + 1}/${date.getFullYear()}`,
-        Closing: value
-      };
-    });
-  };
-
   useEffect(() => {
     const loadData = async () => {
       try {
         setIsLoading(true);
         setError(null);
 
-        // Try to load real data
-        if (window.fs) {
-          const csvContent = await window.fs.readFile('public/data/sp500_data.csv', { encoding: 'utf8' });
-          Papa.parse(csvContent, {
-            header: true,
-            dynamicTyping: true,
-            skipEmptyLines: true,
-            complete: (results) => {
-              if (results.errors && results.errors.length > 0) {
-                console.warn('Using sample data due to parsing errors:', results.errors);
-                setSpData(createSampleData());
-              } else {
-                setSpData(results.data);
-              }
-              setIsLoading(false);
-            },
-            error: (error) => {
-              console.warn('Using sample data due to parse error:', error);
-              setSpData(createSampleData());
-              setIsLoading(false);
-            }
-          });
-        } else {
-          // If file system is not available, use sample data
-          console.warn('File system not available, using sample data');
-          setSpData(createSampleData());
-          setIsLoading(false);
+        if (!window.fs) {
+          throw new Error('לא ניתן לטעון את נתוני המדד');
         }
+
+        const csvContent = await window.fs.readFile('sp500_data.csv', { encoding: 'utf8' });
+        
+        Papa.parse(csvContent, {
+          header: true,
+          delimiter: "\t",  // Using tab as delimiter
+          dynamicTyping: true,
+          skipEmptyLines: true,
+          complete: (results) => {
+            if (results.errors && results.errors.length > 0) {
+              console.error('Error parsing CSV:', results.errors);
+              setError('שגיאה בטעינת נתוני המדד');
+              return;
+            }
+            setSpData(results.data);
+            setIsLoading(false);
+          },
+          error: (error) => {
+            setError('שגיאה בטעינת נתוני המדד: ' + error.message);
+            setIsLoading(false);
+          }
+        });
       } catch (error) {
-        console.warn('Using sample data due to error:', error);
-        setSpData(createSampleData());
+        setError('שגיאה בטעינת נתוני המדד: ' + error.message);
         setIsLoading(false);
       }
     };
@@ -96,12 +75,16 @@ const InvestmentCalculator = () => {
 
     // Find relevant investment period
     const startIndex = spData.findIndex(data => {
+      if (!data.Month) return false;
       const [day, month, year] = data.Month.split('/');
       const dataDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
       return dataDate >= birthDateObj;
     });
 
-    if (startIndex === -1) return;
+    if (startIndex === -1) {
+      setError('לא נמצאו נתונים מתאריך הלידה');
+      return;
+    }
 
     const relevantData = spData.slice(startIndex);
     const monthlyInvestment = 100;
@@ -113,20 +96,20 @@ const InvestmentCalculator = () => {
       const unitsThisMonth = monthlyInvestment / month.Closing;
       totalUnits += unitsThisMonth;
       
-      const [day, month_num, year] = month.Month.split('/');
+      const [day, monthNum, year] = month.Month.split('/');
       return {
-        date: `${year}-${month_num}`,
-        value: totalUnits * month.Closing,
+        date: `${year}-${monthNum}`,
+        value: Math.round(totalUnits * month.Closing),
         invested: monthlyInvestment * (index + 1)
       };
     });
 
     const currentValue = totalUnits * relevantData[relevantData.length - 1].Closing;
     const lastDataPoint = spData[spData.length - 1];
-    const [lastDay, lastMonth, lastYear] = lastDataPoint.Month.split('/');
-    const lastDate = new Date(parseInt(lastYear), parseInt(lastMonth) - 1, parseInt(lastDay));
     
     // Calculate years and months to retirement
+    const [lastDay, lastMonth, lastYear] = lastDataPoint.Month.split('/');
+    const lastDate = new Date(parseInt(lastYear), parseInt(lastMonth) - 1, parseInt(lastDay));
     const diffTime = lastDate - birthDateObj;
     const currentAgeInMonths = Math.floor(diffTime / (1000 * 60 * 60 * 24 * 30.4375));
     const currentAge = currentAgeInMonths / 12;
@@ -164,7 +147,7 @@ const InvestmentCalculator = () => {
     <div className="p-6 max-w-5xl mx-auto bg-gradient-to-b from-blue-50 to-white" dir="rtl">
       <Card className="shadow-xl border-none rounded-2xl overflow-hidden">
         <CardHeader className="bg-gradient-to-r from-blue-600 to-blue-400 text-white p-6">
-          <CardTitle className="text-3xl font-bold text-center mb-2">החסכון שנולד איתי</CardTitle>
+          <CardTitle className="text-3xl font-bold text-center mb-2">החיסכון שנולד איתי</CardTitle>
           <p className="text-sm opacity-90 text-center mb-1">
             גלה את פוטנציאל החסכון שהיה מצטבר מיום לידתך
           </p>
@@ -221,6 +204,12 @@ const InvestmentCalculator = () => {
                 />
               </div>
             </div>
+
+            {error && (
+              <div className="text-red-500 text-center p-4 bg-red-50 rounded-lg">
+                {error}
+              </div>
+            )}
 
             {results && (
               <div className="space-y-8">
