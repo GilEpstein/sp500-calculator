@@ -125,8 +125,8 @@ const InvestmentCalculator = () => {
       }))
     };
 
-    // שלב 2: חישוב תחזיות עתידיות - רק אם גיל הפנסיה גדול מאפס
-    if (retirementAge > 0) {
+    // שלב 2: חישוב תחזיות עתידיות - רק אם גיל הפנסיה גדול מהגיל הנוכחי
+    if (retirementAge > Math.floor(currentAge)) {
       const retirementAgeInMonths = retirementAge * 12;
       const monthsToRetirement = retirementAgeInMonths - currentAgeInMonths;
       
@@ -149,7 +149,7 @@ const InvestmentCalculator = () => {
         futureValues
       });
     } else {
-      // אם גיל הפנסיה אפס, מחזירים רק את הערך הנוכחי
+      // אם גיל הפנסיה קטן או שווה לגיל הנוכחי, מחזירים רק את הערך הנוכחי
       setResults(baseResults);
     }
   };
@@ -317,8 +317,8 @@ const InvestmentCalculator = () => {
                               תשואה שנתית: 12.43%
                             </div>
                           </h3>
-                         <p className="text-2xl font-bold text-orange-800 text-center mt-4">
-                            {formatCurrency(results.futureValues.scenario2)}
+                          <p className="text-2xl font-bold text-orange-800 text-center mt-4">
+{formatCurrency(results.futureValues.scenario2)}
                           </p>
                         </CardContent>
                       </Card>
