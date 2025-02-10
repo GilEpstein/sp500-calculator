@@ -11,7 +11,7 @@ const InvestmentCalculator = () => {
   });
   const [spData, setSpData] = useState([]);
   const [results, setResults] = useState(null);
-  const [retirementAge, setRetirementAge] = useState(67);
+  const [retirementAge, setRetirementAge] = useState(0);  // שינוי מ-67 ל-0
   const [dataLoaded, setDataLoaded] = useState(false);
   const [error, setError] = useState(null);
   
@@ -323,9 +323,8 @@ const InvestmentCalculator = () => {
                         </CardContent>
                       </Card>
 
-                      <Card className="bg-gradient-to-br from-orange-50 to-orange-100 shadow
--md hover:shadow-lg transition-shadow">
-                        <CardContent className="p-6">
+                      <Card className="bg-gradient-to-br from-orange-50 to-orange-100 shadow-md hover:shadow-lg transition-shadow">
+                        <Car dContent className="p-6">
                           <h3 className="text-base font-semibold text-orange-900 mb-2 text-center">
                             תחזית מאוזנת
                             <div className="text-sm text-orange-700">
