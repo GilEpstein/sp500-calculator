@@ -115,6 +115,12 @@ const InvestmentCalculator = () => {
     const currentAgeInMonths = Math.floor(diffTime / (1000 * 60 * 60 * 24 * 30.4375));
     const currentAge = currentAgeInMonths / 12;
 
+    // שורות דיבאג חדשות
+    console.log('בדיקת ערכים:');
+    console.log('גיל נוכחי:', currentAge);
+    console.log('גיל פרישה:', retirementAge);
+    console.log('האם צריך להציג תחזיות:', retirementAge > Math.floor(currentAge));
+
     // בסיס התוצאות - תמיד כולל את הערך הנוכחי
     const baseResults = {
       ...currentInvestment,
@@ -312,13 +318,14 @@ const InvestmentCalculator = () => {
                           <h3 className="text-base font-semibold text-orange-900 mb-2 text-center">
                             תחזית מאוזנת
                             <div className="text-sm text-orange-700">
-                              לפי ממוצע 10 השנים האחרונות
+                              לפי ממוצע 10
+השנים האחרונות
                               <br />
                               תשואה שנתית: 12.43%
                             </div>
                           </h3>
                           <p className="text-2xl font-bold text-orange-800 text-center mt-4">
-{formatCurrency(results.futureValues.scenario2)}
+                            {formatCurrency(results.futureValues.scenario2)}
                           </p>
                         </CardContent>
                       </Card>
