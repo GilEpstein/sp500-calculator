@@ -279,7 +279,7 @@ export default function InvestmentCalculator() {
                 </div>
 
                 {results.futureValues && (
-                  <>
+                  <div className="space-y-8">
                     <div className="text-center text-xl font-semibold text-gray-800 mb-4">
                       תחזית לגיל {retirementAge}
                       {results.yearsToRetirement > 0 || results.monthsToRetirement > 0 ? 
@@ -328,58 +328,55 @@ export default function InvestmentCalculator() {
                             </div>
                           </h3>
                           <p className="text-2xl font-bold text-orange-800 text-center mt-4">
-                            {formatCurrency(results.futureValues.scenario3)}
+{formatCurrency(results.futureValues.scenario3)}
                           </p>
                         </CardContent>
                       </Card>
                     </div>
-</div>
 
-                    <div className="mt-8">
-                      <Card>
-                        <CardHeader>
-                          <CardTitle className="text-center">התפתחות ההשקעה לאורך זמן</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="h-96">
-                            <ResponsiveContainer width="100%" height="100%">
-                              <LineChart data={results.investmentData}>
-                                <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
-                                <XAxis dataKey="date" stroke="#6B7280" />
-                                <YAxis stroke="#6B7280" />
-                                <Tooltip
-                                  formatter={(value) => formatCurrency(value)}
-                                  contentStyle={{
-                                    backgroundColor: 'rgba(255, 255, 255, 0.95)',
-                                    borderRadius: '0.5rem',
-                                    border: 'none',
-                                    boxShadow: '0 2px 10px rgba(0, 0, 0, 0.1)'
-                                  }}
-                                />
-                                <Legend />
-                                <Line
-                                  type="monotone"
-                                  dataKey="value"
-                                  name="שווי תיק"
-                                  stroke="#6366f1"
-                                  strokeWidth={3}
-                                  dot={false}
-                                />
-                                <Line
-                                  type="monotone"
-                                  dataKey="invested"
-                                  name="סכום שהושקע"
-                                  stroke="#22c55e"
-                                  strokeWidth={3}
-                                  dot={false}
-                                />
-                              </LineChart>
-                            </ResponsiveContainer>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    </div>
-                  </>
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="text-center">התפתחות ההשקעה לאורך זמן</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="h-96">
+                          <ResponsiveContainer width="100%" height="100%">
+                            <LineChart data={results.investmentData}>
+                              <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+                              <XAxis dataKey="date" stroke="#6B7280" />
+                              <YAxis stroke="#6B7280" />
+                              <Tooltip
+                                formatter={(value) => formatCurrency(value)}
+                                contentStyle={{
+                                  backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                                  borderRadius: '0.5rem',
+                                  border: 'none',
+                                  boxShadow: '0 2px 10px rgba(0, 0, 0, 0.1)'
+                                }}
+                              />
+                              <Legend />
+                              <Line
+                                type="monotone"
+                                dataKey="value"
+                                name="שווי תיק"
+                                stroke="#6366f1"
+                                strokeWidth={3}
+                                dot={false}
+                              />
+                              <Line
+                                type="monotone"
+                                dataKey="invested"
+                                name="סכום שהושקע"
+                                stroke="#22c55e"
+                                strokeWidth={3}
+                                dot={false}
+                              />
+                            </LineChart>
+                          </ResponsiveContainer>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
                 )}
               </div>
             )}
