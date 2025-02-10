@@ -11,16 +11,39 @@ const InvestmentCalculator = () => {
   const [results, setResults] = useState(null);
   const [retirementAge, setRetirementAge] = useState(67);
   const [error, setError] = useState(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [spData, setSpData] = useState([]);
 
-  // Sample data for testing
-  const testData = [
-    { Month: "1/1/1980", Closing: 100 },
-    { Month: "1/2/1980", Closing: 102 },
-    { Month: "1/3/1980", Closing: 105 },
-    // Add more months...
-    { Month: "1/1/2024", Closing: 4500 }
-  ];
+  // Load the test data on component mount
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        if (!window.fs) {
+          throw new Error('File system API is not available');
+        }
+        
+        const response = await window.fs.readFile('public/data/sp500_data.csv', { encoding: 'utf8' });
+        const processedData = response.split('\n')
+          .slice(1) // Skip header
+          .map(line => {
+            const [month, closing] = line.split(',');
+            return {
+              Month: month.trim(),
+              Closing: parseFloat(closing.trim())
+            };
+          })
+          .filter(item => !isNaN(item.Closing));
+        
+        setSpData(processedData);
+        setIsLoading(false);
+      } catch (error) {
+        setError('Error loading data: ' + error.message);
+        setIsLoading(false);
+      }
+    };
+
+    loadData();
+  }, []);
 
   const formatCurrency = (value) => {
     return new Intl.NumberFormat('he-IL', {
@@ -32,7 +55,7 @@ const InvestmentCalculator = () => {
   };
 
   const calculateInvestment = () => {
-    if (!birthDate.year) return;
+    if (!birthDate.year || spData.length === 0) return;
 
     const birthDateObj = new Date(
       parseInt(birthDate.year), 
@@ -41,7 +64,7 @@ const InvestmentCalculator = () => {
     );
 
     // Find relevant investment period
-    const startIndex = testData.findIndex(data => {
+    const startIndex = spData.findIndex(data => {
       const [day, month, year] = data.Month.split('/');
       const dataDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
       return dataDate >= birthDateObj;
@@ -49,7 +72,7 @@ const InvestmentCalculator = () => {
 
     if (startIndex === -1) return;
 
-    const relevantData = testData.slice(startIndex);
+    const relevantData = spData.slice(startIndex);
     const monthlyInvestment = 100;
     const totalInvested = relevantData.length * monthlyInvestment;
 
@@ -58,41 +81,72 @@ const InvestmentCalculator = () => {
     const investmentData = relevantData.map((month, index) => {
       const unitsThisMonth = monthlyInvestment / month.Closing;
       totalUnits += unitsThisMonth;
+      
+      const [day, month_num, year] = month.Month.split('/');
       return {
-        date: month.Month.split('/').slice(1).reverse().join('-'), // Convert to YYYY-MM format
+        date: `${year}-${month_num}`,
         value: totalUnits * month.Closing,
         invested: monthlyInvestment * (index + 1)
       };
     });
 
     const currentValue = totalUnits * relevantData[relevantData.length - 1].Closing;
+    const lastDataPoint = spData[spData.length - 1];
+    const [lastDay, lastMonth, lastYear] = lastDataPoint.Month.split('/');
+    const lastDate = new Date(parseInt(lastYear), parseInt(lastMonth) - 1, parseInt(lastDay));
+    
+    // Calculate years and months to retirement
+    const diffTime = lastDate - birthDateObj;
+    const currentAgeInMonths = Math.floor(diffTime / (1000 * 60 * 60 * 24 * 30.4375));
+    const currentAge = currentAgeInMonths / 12;
+    
+    const yearsToRetirement = Math.max(0, Math.floor(retirementAge - currentAge));
+    const monthsToRetirement = Math.round((retirementAge - currentAge - yearsToRetirement) * 12);
 
-    const investmentData = Array.from({ length: Math.floor(monthsInvested) }, (_, index) => ({
-      date: `${Math.floor(index / 12) + parseInt(birthDate.year)}-${(index % 12) + 1}`,
-      value: 100 * (index + 1) * 1.5,
-      invested: 100 * (index + 1)
-    }));
+    // Calculate future values
+    const yearsWithMonthsFraction = yearsToRetirement + (monthsToRetirement / 12);
+    const futureValues = {
+      scenario1: calculateFutureValue(currentValue, yearsWithMonthsFraction, 0.0927),
+      scenario2: calculateFutureValue(currentValue, yearsWithMonthsFraction, 0.1243),
+      scenario3: calculateFutureValue(currentValue, yearsWithMonthsFraction, 0.149)
+    };
 
     setResults({
       totalInvested,
       currentValue,
       investmentData,
-      latestDate: "1/1/2024",
-      yearsToRetirement: retirementAge - Math.floor(monthsInvested / 12),
-      monthsToRetirement: Math.floor(monthsInvested % 12),
-      futureValues: {
-        scenario1: currentValue * 1.5,
-        scenario2: currentValue * 2,
-        scenario3: currentValue * 2.5
-      }
+      latestDate: lastDataPoint.Month,
+      yearsToRetirement,
+      monthsToRetirement,
+      futureValues
     });
   };
 
+  const calculateFutureValue = (presentValue, years, annualReturn) => {
+    return presentValue * Math.pow(1 + annualReturn, years);
+  };
+
   useEffect(() => {
-    if (birthDate.day && birthDate.month && birthDate.year) {
+    if (birthDate.day && birthDate.month && birthDate.year && !isLoading) {
       calculateInvestment();
     }
-  }, [birthDate, retirementAge]);
+  }, [birthDate, retirementAge, spData, isLoading]);
+
+  if (isLoading) {
+    return (
+      <div className="p-6 max-w-5xl mx-auto">
+        <div className="text-center">טוען נתונים...</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-6 max-w-5xl mx-auto">
+        <div className="text-red-500 text-center">{error}</div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 max-w-5xl mx-auto bg-gradient-to-b from-blue-50 to-white" dir="rtl">
