@@ -1,29 +1,21 @@
 import React, { useState, useEffect } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Papa from 'papaparse';
 
 const InvestmentCalculator = () => {
-  const [birthDate, setBirthDate] = useState({
-    day: '',
-    month: '',
-    year: ''
-  });
+  const [birthDate, setBirthDate] = useState({ day: '', month: '', year: '' });
   const [spData, setSpData] = useState([]);
   const [results, setResults] = useState(null);
   const [retirementAge, setRetirementAge] = useState(0);
   const [dataLoaded, setDataLoaded] = useState(false);
   const [error, setError] = useState(null);
-  
+
   useEffect(() => {
     const loadData = async () => {
       try {
-        const response = await fetch('/sp500-calculator/data/sp500_data.csv');
-        if (!response.ok) {
-          throw new Error('Failed to load data');
-        }
-        const csvText = await response.text();
-        Papa.parse(csvText, {
+        const response = await window.fs.readFile('sp500_data.csv', { encoding: 'utf8' });
+        Papa.parse(response, {
           header: true,
           dynamicTyping: true,
           skipEmptyLines: true,
@@ -44,8 +36,8 @@ const InvestmentCalculator = () => {
     loadData();
   }, []);
 
-  const calculateFutureValue = (presentValue, yearsWithMonths, annualReturn) => {
-    return presentValue * Math.pow(1 + annualReturn, yearsWithMonths);
+  const calculateFutureValue = (presentValue, years, annualReturn) => {
+    return presentValue * Math.pow(1 + annualReturn, years);
   };
 
   const calculateCurrentInvestment = (birthDateObj) => {
@@ -53,19 +45,22 @@ const InvestmentCalculator = () => {
     const [lastDay, lastMonth, lastYear] = lastDataRow.Month.split('/');
     const lastDate = new Date(parseInt(lastYear), parseInt(lastMonth) - 1, parseInt(lastDay));
     
-    const monthlyInvestment = 100;
-    let totalMonths = 0;
-    let currentDate = new Date(birthDateObj);
-    
-    while (currentDate <= lastDate) {
-      totalMonths++;
-      currentDate.setMonth(currentDate.getMonth() + 1);
+    // Return empty results if birth date is after last available data
+    if (birthDateObj > lastDate) {
+      return {
+        totalInvested: 0,
+        currentValue: 0,
+        investmentData: [],
+        latestDate: lastDataRow.Month
+      };
     }
-    
-    const totalInvested = totalMonths * monthlyInvestment;
+
+    const monthlyInvestment = 100;
     let units = 0;
+    let totalMonths = 0;
     const investmentData = [];
-    
+
+    // Calculate investment data
     for (const row of spData) {
       if (!row.Month || !row.Closing) continue;
       
@@ -73,20 +68,21 @@ const InvestmentCalculator = () => {
       const monthDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
       
       if (monthDate >= birthDateObj && monthDate <= lastDate) {
+        totalMonths++;
         const newUnits = monthlyInvestment / row.Closing;
         units += newUnits;
         
-        const currentValue = units * row.Closing;
         investmentData.push({
           date: `${year}-${month}`,
-          value: currentValue,
-          invested: monthlyInvestment * (investmentData.length + 1)
+          value: units * row.Closing,
+          invested: monthlyInvestment * totalMonths
         });
       }
     }
 
     const currentValue = units * lastDataRow.Closing;
-    
+    const totalInvested = totalMonths * monthlyInvestment;
+
     return {
       totalInvested,
       currentValue,
@@ -99,34 +95,23 @@ const InvestmentCalculator = () => {
     if (!birthDate.year || !spData.length) return;
 
     const birthDateObj = new Date(
-      parseInt(birthDate.year), 
-      parseInt(birthDate.month) - 1, 
+      parseInt(birthDate.year),
+      parseInt(birthDate.month) - 1,
       parseInt(birthDate.day)
     );
-    
-    // שלב 1: חישוב הערך הנוכחי - תמיד מתבצע
+
+    // Calculate current investment values
     const currentInvestment = calculateCurrentInvestment(birthDateObj);
-    
-    // חישוב הגיל הנוכחי - שיטה חדשה
+
+    // Calculate current age
     const lastDataRow = spData[spData.length - 1];
     const [lastDay, lastMonth, lastYear] = lastDataRow.Month.split('/');
+    const lastDate = new Date(parseInt(lastYear), parseInt(lastMonth) - 1, parseInt(lastDay));
     
-    // חישוב ההפרש בשנים
-    let currentAge = parseInt(lastYear) - parseInt(birthDate.year);
-    
-    // התאמה לפי חודש ויום
-    if (parseInt(lastMonth) < parseInt(birthDate.month) || 
-       (parseInt(lastMonth) === parseInt(birthDate.month) && 
-        parseInt(lastDay) < parseInt(birthDate.day))) {
-      currentAge--;
-    }
+    const ageInMilliseconds = lastDate - birthDateObj;
+    const currentAge = Math.floor(ageInMilliseconds / (1000 * 60 * 60 * 24 * 365.25));
 
-    // חישוב מספר החודשים המדויק לצורך חישובים עתידיים
-    const currentAgeInMonths = currentAge * 12 + 
-      (parseInt(lastMonth) - parseInt(birthDate.month)) +
-      (parseInt(lastDay) >= parseInt(birthDate.day) ? 1 : 0);
-
-    // בסיס התוצאות - תמיד כולל את הערך הנוכחי
+    // Base results with current investment data
     const baseResults = {
       ...currentInvestment,
       investmentData: currentInvestment.investmentData.map(item => ({
@@ -136,36 +121,23 @@ const InvestmentCalculator = () => {
       }))
     };
 
-    console.log('בדיקת ערכים:');
-    console.log('גיל נוכחי:', currentAge);
-    console.log('גיל פרישה:', retirementAge);
-    console.log('האם צריך להציג תחזיות:', retirementAge > currentAge);
-
-    // שלב 2: חישוב תחזיות עתידיות - רק אם גיל הפנסיה גדול מהגיל הנוכחי
+    // Calculate future projections if retirement age is set and greater than current age
     if (retirementAge > currentAge) {
-      const retirementAgeInMonths = retirementAge * 12;
-      const monthsToRetirement = retirementAgeInMonths - currentAgeInMonths;
+      const yearsToRetirement = retirementAge - currentAge;
       
-      // חישוב שנים וחודשים שנשארו
-      const yearsToRetirement = Math.floor(monthsToRetirement / 12);
-      const remainingMonths = monthsToRetirement % 12;
-      
-      // חישוב תחזיות עתידיות
-      const yearsWithMonthsFraction = yearsToRetirement + (remainingMonths / 12);
       const futureValues = {
-        scenario1: calculateFutureValue(currentInvestment.currentValue, yearsWithMonthsFraction, 0.0927),
-        scenario2: calculateFutureValue(currentInvestment.currentValue, yearsWithMonthsFraction, 0.1243),
-        scenario3: calculateFutureValue(currentInvestment.currentValue, yearsWithMonthsFraction, 0.149)
+        scenario1: calculateFutureValue(currentInvestment.currentValue, yearsToRetirement, 0.0927),
+        scenario2: calculateFutureValue(currentInvestment.currentValue, yearsToRetirement, 0.1243),
+        scenario3: calculateFutureValue(currentInvestment.currentValue, yearsToRetirement, 0.149)
       };
 
       setResults({
         ...baseResults,
         yearsToRetirement,
-        monthsToRetirement: remainingMonths,
+        monthsToRetirement: 0,
         futureValues
       });
     } else {
-      // אם גיל הפנסיה קטן או שווה לגיל הנוכחי, מחזירים רק את הערך הנוכחי
       setResults(baseResults);
     }
   };
@@ -175,7 +147,6 @@ const InvestmentCalculator = () => {
       ...prev,
       [field]: value
     }));
-    
     setTimeout(calculateInvestment, 0);
   };
 
@@ -248,7 +219,7 @@ const InvestmentCalculator = () => {
                   value={retirementAge}
                   onChange={(e) => {
                     setRetirementAge(Number(e.target.value));
-                    calculateInvestment();
+                    setTimeout(calculateInvestment, 0);
                   }}
                   min="0"
                   max="120"
@@ -295,12 +266,9 @@ const InvestmentCalculator = () => {
                 {results.futureValues && (
                   <div>
                     <div className="text-center text-xl font-semibold text-gray-800 mb-4">
-                      תחזית לגיל {retirementAge} 
-                      {results.yearsToRetirement > 0 || results.monthsToRetirement > 0 ? 
-                        ` (בעוד ${results.yearsToRetirement > 0 ? `${results.yearsToRetirement} שנים` : ''}${
-                          results.yearsToRetirement > 0 && results.monthsToRetirement > 0 ? ' ו-' : ''
-                        }${results.monthsToRetirement > 0 ? `${results.monthsToRetirement} חודשים` : ''})` 
-                        : ''
+                      תחזית לגיל {retirementAge}
+                      {results.yearsToRetirement > 0 ? 
+                        ` (בעוד ${results.yearsToRetirement} שנים)` : ''
                       }
                     </div>
                     <div className="text-center text-sm text-gray-600 mb-6">
@@ -367,7 +335,7 @@ const InvestmentCalculator = () => {
                   <CardContent className="p-6">
                     <div className="h-96">
                       <ResponsiveContainer width="100%" height="100%">
-                        <LineChart data={results.investmentData}>
+<LineChart data={results.investmentData}>
                           <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
                           <XAxis dataKey="date" stroke="#6B7280" />
                           <YAxis stroke="#6B7280" />
@@ -409,6 +377,6 @@ const InvestmentCalculator = () => {
       </Card>
     </div>
   );
-}
+};
 
 export default InvestmentCalculator;
