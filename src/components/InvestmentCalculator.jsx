@@ -126,11 +126,6 @@ const InvestmentCalculator = () => {
       (parseInt(lastMonth) - parseInt(birthDate.month)) +
       (parseInt(lastDay) >= parseInt(birthDate.day) ? 1 : 0);
 
-    console.log('בדיקת ערכים חדשה:');
-    console.log('גיל נוכחי:', currentAge);
-    console.log('גיל פרישה:', retirementAge);
-    console.log('האם צריך להציג תחזיות:', retirementAge > currentAge);
-
     // בסיס התוצאות - תמיד כולל את הערך הנוכחי
     const baseResults = {
       ...currentInvestment,
@@ -140,6 +135,11 @@ const InvestmentCalculator = () => {
         invested: Math.round(item.invested)
       }))
     };
+
+    console.log('בדיקת ערכים:');
+    console.log('גיל נוכחי:', currentAge);
+    console.log('גיל פרישה:', retirementAge);
+    console.log('האם צריך להציג תחזיות:', retirementAge > currentAge);
 
     // שלב 2: חישוב תחזיות עתידיות - רק אם גיל הפנסיה גדול מהגיל הנוכחי
     if (retirementAge > currentAge) {
@@ -323,8 +323,8 @@ const InvestmentCalculator = () => {
                         </CardContent>
                       </Card>
 
-                      <Card className="bg-gradient-to-br from-orange-50 to-orange-100 shadow-
-shadow-md hover:shadow-lg transition-shadow">
+                      <Card className="bg-gradient-to-br from-orange-50 to-orange-100 shadow
+-md hover:shadow-lg transition-shadow">
                         <CardContent className="p-6">
                           <h3 className="text-base font-semibold text-orange-900 mb-2 text-center">
                             תחזית מאוזנת
