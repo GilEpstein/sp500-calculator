@@ -40,10 +40,32 @@ const InvestmentCalculator = () => {
       parseInt(birthDate.day)
     );
 
-    // Simple test calculation
-    const monthsInvested = (new Date(2024, 0, 1) - birthDateObj) / (1000 * 60 * 60 * 24 * 30.4375);
-    const totalInvested = Math.floor(monthsInvested) * 100;
-    const currentValue = totalInvested * 1.8; // Simplified return calculation
+    // Find relevant investment period
+    const startIndex = testData.findIndex(data => {
+      const [day, month, year] = data.Month.split('/');
+      const dataDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+      return dataDate >= birthDateObj;
+    });
+
+    if (startIndex === -1) return;
+
+    const relevantData = testData.slice(startIndex);
+    const monthlyInvestment = 100;
+    const totalInvested = relevantData.length * monthlyInvestment;
+
+    // Calculate units accumulated using dollar-cost averaging
+    let totalUnits = 0;
+    const investmentData = relevantData.map((month, index) => {
+      const unitsThisMonth = monthlyInvestment / month.Closing;
+      totalUnits += unitsThisMonth;
+      return {
+        date: month.Month.split('/').slice(1).reverse().join('-'), // Convert to YYYY-MM format
+        value: totalUnits * month.Closing,
+        invested: monthlyInvestment * (index + 1)
+      };
+    });
+
+    const currentValue = totalUnits * relevantData[relevantData.length - 1].Closing;
 
     const investmentData = Array.from({ length: Math.floor(monthsInvested) }, (_, index) => ({
       date: `${Math.floor(index / 12) + parseInt(birthDate.year)}-${(index % 12) + 1}`,
