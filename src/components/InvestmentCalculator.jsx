@@ -25,8 +25,34 @@ const InvestmentCalculator = () => {
           throw new Error('לא ניתן לטעון את נתוני המדד');
         }
 
-        const csvContent = await window.fs.readFile('/sp500-calculator/public/data/sp500_data.csv', { encoding: 'utf8' });
-        
+        let csvContent;
+        try {
+          // Try different paths for the CSV file
+          const possiblePaths = [
+            'sp500_data.csv',
+            '/sp500_data.csv',
+            '/data/sp500_data.csv',
+            'data/sp500_data.csv',
+            '/public/data/sp500_data.csv',
+            'public/data/sp500_data.csv'
+          ];
+
+          for (const path of possiblePaths) {
+            try {
+              csvContent = await window.fs.readFile(path, { encoding: 'utf8' });
+              if (csvContent) break;
+            } catch (e) {
+              console.warn(`Failed to load from path: ${path}`);
+            }
+          }
+
+          if (!csvContent) {
+            throw new Error('לא נמצא קובץ הנתונים');
+          }
+        } catch (error) {
+          throw new Error('שגיאה בטעינת קובץ הנתונים: ' + error.message);
+        }
+
         Papa.parse(csvContent, {
           header: true,
           delimiter: "\t",  // Using tab as delimiter
@@ -304,6 +330,9 @@ const InvestmentCalculator = () => {
                           <h3 className="text-base font-semibold text-orange-900 mb-2 text-center">
                             תחזית אופטימית
                             <div className="text-sm text-orange-700">
+                              תשואה שנתית: 14.9%
+                            </div>
+<div className="text-sm text-orange-700">
                               תשואה שנתית: 14.9%
                             </div>
                           </h3>
