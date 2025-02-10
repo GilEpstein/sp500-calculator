@@ -25,7 +25,7 @@ const InvestmentCalculator = () => {
           throw new Error('לא ניתן לטעון את נתוני המדד');
         }
 
-        const csvContent = await window.fs.readFile('sp500_data.csv', { encoding: 'utf8' });
+        const csvContent = await window.fs.readFile('/sp500-calculator/public/data/sp500_data.csv', { encoding: 'utf8' });
         
         Papa.parse(csvContent, {
           header: true,
@@ -34,10 +34,27 @@ const InvestmentCalculator = () => {
           skipEmptyLines: true,
           complete: (results) => {
             if (results.errors && results.errors.length > 0) {
-              console.error('Error parsing CSV:', results.errors);
-              setError('שגיאה בטעינת נתוני המדד');
+              console.error('Parse errors:', results.errors);
+              setError('שגיאה בפרסור נתוני המדד');
+              setIsLoading(false);
               return;
             }
+            
+            console.log('Parsed data sample:', results.data.slice(0, 5));
+            
+            if (!results.data || results.data.length === 0) {
+              setError('לא נמצאו נתונים בקובץ');
+              setIsLoading(false);
+              return;
+            }
+
+            // Validate data structure
+            if (!results.data[0].Month || !results.data[0].Closing) {
+              setError('מבנה הנתונים בקובץ אינו תקין');
+              setIsLoading(false);
+              return;
+            }
+
             setSpData(results.data);
             setIsLoading(false);
           },
