@@ -5,12 +5,15 @@ import Papa from 'papaparse';
 import { Calendar } from 'lucide-react';
 
 const InvestmentCalculator = () => {
+  // State definitions
   const [birthDate, setBirthDate] = useState({ day: '26', month: '12', year: '1964' });
   const [spData, setSpData] = useState([]);
   const [results, setResults] = useState(null);
   const [retirementAge, setRetirementAge] = useState(0);
   const [dataLoaded, setDataLoaded] = useState(false);
   const [error, setError] = useState(null);
+
+  // Date validation helper
   const isValidDate = (day, month, year) => {
     if (!day || !month || !year) return false;
     const date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
@@ -19,15 +22,12 @@ const InvestmentCalculator = () => {
            date.getFullYear() === parseInt(year);
   };
 
+  // Data loading effect
   useEffect(() => {
     const loadData = async () => {
       try {
-        const response = await fetch('/data/sp500_data.csv');
-        if (!response.ok) {
-          throw new Error('Failed to load data');
-        }
-        const text = await response.text();
-        Papa.parse(text, {
+        const response = await window.fs.readFile('sp500_data.csv', { encoding: 'utf8' });
+        Papa.parse(response, {
           header: true,
           dynamicTyping: true,
           skipEmptyLines: true,
@@ -48,11 +48,44 @@ const InvestmentCalculator = () => {
     loadData();
   }, []);
 
+  // Investment calculation trigger effect
   useEffect(() => {
     if (dataLoaded && birthDate.day && birthDate.month && birthDate.year) {
       calculateInvestment();
     }
   }, [birthDate, dataLoaded, retirementAge]);
+
+  // Date input handlers
+  const handleDateInput = (value) => {
+    const datePattern = /^(\d{1,2})[/]?(\d{1,2})?[/]?(\d{0,4})?$/;
+    const match = value.match(datePattern);
+    
+    if (match) {
+      const [_, day, month, year] = match;
+      if (day) handleDateChange('day', day);
+      if (month) handleDateChange('month', month);
+      if (year) handleDateChange('year', year);
+    }
+  };
+
+  const handleDateChange = (field, value) => {
+    setBirthDate(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  // Format currency helper
+  const formatCurrency = (value) => {
+    return new Intl.NumberFormat('he-IL', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
+    }).format(Math.round(value));
+  };
+};
+// Continuing InvestmentCalculator component...
 
   const calculateFutureValue = (presentValue, years, annualReturn) => {
     return presentValue * Math.pow(1 + annualReturn, years);
@@ -134,7 +167,6 @@ const InvestmentCalculator = () => {
     const [lastDay, lastMonth, lastYear] = lastDataRow.Month.split('/');
     const lastDate = new Date(parseInt(lastYear), parseInt(lastMonth) - 1, parseInt(lastDay));
     
-    // חישוב גיל מדויק כולל חודשים
     const ageInMilliseconds = lastDate - birthDateObj;
     const totalMonths = Math.floor(ageInMilliseconds / (1000 * 60 * 60 * 24 * 30.4375));
     const currentAge = totalMonths / 12;
@@ -171,35 +203,9 @@ const InvestmentCalculator = () => {
       setResults(baseResults);
     }
   };
+// Continuing InvestmentCalculator component...
 
-  const formatCurrency = (value) => {
-    return new Intl.NumberFormat('he-IL', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0
-    }).format(Math.round(value));
-  };
-
-  const handleDateInput = (value) => {
-    const datePattern = /^(\d{1,2})[/]?(\d{1,2})?[/]?(\d{0,4})?$/;
-    const match = value.match(datePattern);
-    
-    if (match) {
-      const [_, day, month, year] = match;
-      if (day) handleDateChange('day', day);
-      if (month) handleDateChange('month', month);
-      if (year) handleDateChange('year', year);
-    }
-  };
-
-  const handleDateChange = (field, value) => {
-    setBirthDate(prev => ({
-      ...prev,
-      [field]: value
-    }));
-  };
-return (
+  return (
     <div className="p-4 md:p-6 max-w-5xl mx-auto bg-gradient-to-b from-blue-50 to-white min-h-screen" dir="rtl">
       <Card className="shadow-xl border-none rounded-2xl overflow-hidden">
         <CardHeader className="bg-gradient-to-r from-blue-600 to-blue-400 text-white p-6">
@@ -301,7 +307,6 @@ return (
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      {/* Conservative Scenario */}
                       <Card className="bg-gradient-to-br from-orange-50 to-orange-100">
                         <CardContent className="p-4">
                           <h3 className="text-base font-semibold text-orange-900 mb-2 text-center">
@@ -316,7 +321,6 @@ return (
                         </CardContent>
                       </Card>
 
-                      {/* Balanced Scenario */}
                       <Card className="bg-gradient-to-br from-orange-50 to-orange-100">
                         <CardContent className="p-4">
                           <h3 className="text-base font-semibold text-orange-900 mb-2 text-center">
@@ -331,7 +335,6 @@ return (
                         </CardContent>
                       </Card>
 
-                      {/* Optimistic Scenario */}
                       <Card className="bg-gradient-to-br from-orange-50 to-orange-100">
                         <CardContent className="p-4">
                           <h3 className="text-base font-semibold text-orange-900 mb-2 text-center">
@@ -399,6 +402,6 @@ return (
       </Card>
     </div>
   );
-}
+};
 
-export default InvestmentCalculator;  
+export default InvestmentCalculator;
