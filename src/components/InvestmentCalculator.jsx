@@ -5,7 +5,7 @@ import Papa from 'papaparse';
 import { Calendar } from 'lucide-react';
 
 const InvestmentCalculator = () => {
-  // State definitions
+  // === Part 1: State and Basic Setup ===
   const [birthDate, setBirthDate] = useState({ day: '26', month: '12', year: '1964' });
   const [spData, setSpData] = useState([]);
   const [results, setResults] = useState(null);
@@ -13,7 +13,6 @@ const InvestmentCalculator = () => {
   const [dataLoaded, setDataLoaded] = useState(false);
   const [error, setError] = useState(null);
 
-  // Date validation helper
   const isValidDate = (day, month, year) => {
     if (!day || !month || !year) return false;
     const date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
@@ -22,7 +21,6 @@ const InvestmentCalculator = () => {
            date.getFullYear() === parseInt(year);
   };
 
-  // Data loading effect
   useEffect(() => {
     const loadData = async () => {
       try {
@@ -48,14 +46,12 @@ const InvestmentCalculator = () => {
     loadData();
   }, []);
 
-  // Investment calculation trigger effect
   useEffect(() => {
     if (dataLoaded && birthDate.day && birthDate.month && birthDate.year) {
       calculateInvestment();
     }
   }, [birthDate, dataLoaded, retirementAge]);
 
-  // Date input handlers
   const handleDateInput = (value) => {
     const datePattern = /^(\d{1,2})[/]?(\d{1,2})?[/]?(\d{0,4})?$/;
     const match = value.match(datePattern);
@@ -75,7 +71,6 @@ const InvestmentCalculator = () => {
     }));
   };
 
-  // Format currency helper
   const formatCurrency = (value) => {
     return new Intl.NumberFormat('he-IL', {
       style: 'currency',
@@ -84,9 +79,8 @@ const InvestmentCalculator = () => {
       maximumFractionDigits: 0
     }).format(Math.round(value));
   };
-};
-// Continuing InvestmentCalculator component...
 
+  // === Part 2: Business Logic ===
   const calculateFutureValue = (presentValue, years, annualReturn) => {
     return presentValue * Math.pow(1 + annualReturn, years);
   };
@@ -203,8 +197,8 @@ const InvestmentCalculator = () => {
       setResults(baseResults);
     }
   };
-// Continuing InvestmentCalculator component...
 
+  // === Part 3: UI Rendering ===
   return (
     <div className="p-4 md:p-6 max-w-5xl mx-auto bg-gradient-to-b from-blue-50 to-white min-h-screen" dir="rtl">
       <Card className="shadow-xl border-none rounded-2xl overflow-hidden">
@@ -224,7 +218,6 @@ const InvestmentCalculator = () => {
         
         <CardContent className="p-4 md:p-8">
           <div className="space-y-6 md:space-y-8">
-            {/* Date Input Section */}
             <div className="flex justify-center">
               <div className="bg-white p-3 rounded-lg shadow-sm border border-gray-100 inline-flex">
                 <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2">
@@ -266,7 +259,6 @@ const InvestmentCalculator = () => {
                   נכון לתאריך: {results.latestDate}
                 </div>
                 
-                {/* Results Cards */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <Card className="bg-gradient-to-br from-blue-50 to-blue-100 shadow-md hover:shadow-lg transition-shadow">
                     <CardContent className="p-4 md:p-6">
@@ -291,7 +283,6 @@ const InvestmentCalculator = () => {
                   </Card>
                 </div>
 
-                {/* Future Values Section */}
                 {results.futureValues && (
                   <div className="space-y-4">
                     <div className="text-center">
