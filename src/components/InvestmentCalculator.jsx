@@ -22,7 +22,7 @@ const InvestmentCalculator = () => {
   useEffect(() => {
     const loadData = async () => {
       try {
-        const response = await window.fs.readFile('sp500_data.csv');
+        const response = await window.fs.readFile('public/data/sp500_data.csv');
         const text = new TextDecoder().decode(response);
         Papa.parse(text, {
           header: true,
@@ -196,7 +196,7 @@ const InvestmentCalculator = () => {
       [field]: value
     }));
   };
-return (
+  return (
     <div className="p-4 md:p-6 max-w-5xl mx-auto bg-gradient-to-b from-blue-50 to-white min-h-screen" dir="rtl">
       <Card className="shadow-xl border-none rounded-2xl overflow-hidden">
         <CardHeader className="bg-gradient-to-r from-blue-600 to-blue-400 text-white p-6">
