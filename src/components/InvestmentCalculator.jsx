@@ -1,25 +1,29 @@
 import React, { useState, useEffect } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Papa from 'papaparse';
 
 const InvestmentCalculator = () => {
-  const [birthDate, setBirthDate] = useState({ day: '', month: '', year: '' });
+  const [birthDate, setBirthDate] = useState({ day: '26', month: '12', year: '1964' });
   const [spData, setSpData] = useState([]);
   const [results, setResults] = useState(null);
   const [retirementAge, setRetirementAge] = useState(0);
   const [dataLoaded, setDataLoaded] = useState(false);
   const [error, setError] = useState(null);
 
+  const isValidDate = (day, month, year) => {
+    if (!day || !month || !year) return false;
+    const date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+    return date.getDate() === parseInt(day) &&
+           date.getMonth() === parseInt(month) - 1 &&
+           date.getFullYear() === parseInt(year);
+  };
+
   useEffect(() => {
     const loadData = async () => {
       try {
-        const response = await fetch('/sp500-calculator/data/sp500_data.csv');
-        if (!response.ok) {
-          throw new Error('Failed to load data');
-        }
-        const csvText = await response.text();
-        Papa.parse(csvText, {
+        const response = await window.fs.readFile('uploaded_file test 26121964.csv', { encoding: 'utf8' });
+        Papa.parse(response, {
           header: true,
           dynamicTyping: true,
           skipEmptyLines: true,
@@ -40,16 +44,30 @@ const InvestmentCalculator = () => {
     loadData();
   }, []);
 
-  const calculateFutureValue = (presentValue, years, annualReturn) => {
+  useEffect(() => {
+    if (dataLoaded && birthDate.day && birthDate.month && birthDate.year) {
+      calculateInvestment();
+    }
+  }, [birthDate, dataLoaded, retirementAge]);
+
+const calculateFutureValue = (presentValue, years, annualReturn) => {
     return presentValue * Math.pow(1 + annualReturn, years);
   };
 
   const calculateCurrentInvestment = (birthDateObj) => {
+    if (!birthDateObj || isNaN(birthDateObj.getTime())) {
+      return {
+        totalInvested: 0,
+        currentValue: 0,
+        investmentData: [],
+        latestDate: null
+      };
+    }
+
     const lastDataRow = spData[spData.length - 1];
     const [lastDay, lastMonth, lastYear] = lastDataRow.Month.split('/');
     const lastDate = new Date(parseInt(lastYear), parseInt(lastMonth) - 1, parseInt(lastDay));
     
-    // Return empty results if birth date is after last available data
     if (birthDateObj > lastDate) {
       return {
         totalInvested: 0,
@@ -64,7 +82,6 @@ const InvestmentCalculator = () => {
     let totalMonths = 0;
     const investmentData = [];
 
-    // Calculate investment data
     for (const row of spData) {
       if (!row.Month || !row.Closing) continue;
       
@@ -96,7 +113,10 @@ const InvestmentCalculator = () => {
   };
 
   const calculateInvestment = () => {
-    if (!birthDate.year || !spData.length) return;
+    if (!isValidDate(birthDate.day, birthDate.month, birthDate.year) || !spData.length) {
+      setResults(null);
+      return;
+    }
 
     const birthDateObj = new Date(
       parseInt(birthDate.year),
@@ -104,10 +124,8 @@ const InvestmentCalculator = () => {
       parseInt(birthDate.day)
     );
 
-    // Calculate current investment values
     const currentInvestment = calculateCurrentInvestment(birthDateObj);
 
-    // Calculate current age
     const lastDataRow = spData[spData.length - 1];
     const [lastDay, lastMonth, lastYear] = lastDataRow.Month.split('/');
     const lastDate = new Date(parseInt(lastYear), parseInt(lastMonth) - 1, parseInt(lastDay));
@@ -115,7 +133,6 @@ const InvestmentCalculator = () => {
     const ageInMilliseconds = lastDate - birthDateObj;
     const currentAge = Math.floor(ageInMilliseconds / (1000 * 60 * 60 * 24 * 365.25));
 
-    // Base results with current investment data
     const baseResults = {
       ...currentInvestment,
       investmentData: currentInvestment.investmentData.map(item => ({
@@ -125,7 +142,6 @@ const InvestmentCalculator = () => {
       }))
     };
 
-    // Calculate future projections if retirement age is set and greater than current age
     if (retirementAge > currentAge) {
       const yearsToRetirement = retirementAge - currentAge;
       
@@ -151,7 +167,133 @@ const InvestmentCalculator = () => {
       ...prev,
       [field]: value
     }));
-    setTimeout(calculateInvestment, 0);
+  };
+
+  const formatCurrency = (value) => {
+    return new Intl.NumberFormat('he-IL', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
+    }).format(Math.round(value));
+  };
+const calculateFutureValue = (presentValue, years, annualReturn) => {
+    return presentValue * Math.pow(1 + annualReturn, years);
+  };
+
+  const calculateCurrentInvestment = (birthDateObj) => {
+    if (!birthDateObj || isNaN(birthDateObj.getTime())) {
+      return {
+        totalInvested: 0,
+        currentValue: 0,
+        investmentData: [],
+        latestDate: null
+      };
+    }
+
+    const lastDataRow = spData[spData.length - 1];
+    const [lastDay, lastMonth, lastYear] = lastDataRow.Month.split('/');
+    const lastDate = new Date(parseInt(lastYear), parseInt(lastMonth) - 1, parseInt(lastDay));
+    
+    if (birthDateObj > lastDate) {
+      return {
+        totalInvested: 0,
+        currentValue: 0,
+        investmentData: [],
+        latestDate: lastDataRow.Month
+      };
+    }
+
+    const monthlyInvestment = 100;
+    let units = 0;
+    let totalMonths = 0;
+    const investmentData = [];
+
+    for (const row of spData) {
+      if (!row.Month || !row.Closing) continue;
+      
+      const [day, month, year] = row.Month.split('/');
+      const monthDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+      
+      if (monthDate >= birthDateObj && monthDate <= lastDate) {
+        totalMonths++;
+        const newUnits = monthlyInvestment / row.Closing;
+        units += newUnits;
+        
+        investmentData.push({
+          date: `${year}-${month}`,
+          value: units * row.Closing,
+          invested: monthlyInvestment * totalMonths
+        });
+      }
+    }
+
+    const currentValue = units * lastDataRow.Closing;
+    const totalInvested = totalMonths * monthlyInvestment;
+
+    return {
+      totalInvested,
+      currentValue,
+      investmentData,
+      latestDate: lastDataRow.Month
+    };
+  };
+
+  const calculateInvestment = () => {
+    if (!isValidDate(birthDate.day, birthDate.month, birthDate.year) || !spData.length) {
+      setResults(null);
+      return;
+    }
+
+    const birthDateObj = new Date(
+      parseInt(birthDate.year),
+      parseInt(birthDate.month) - 1,
+      parseInt(birthDate.day)
+    );
+
+    const currentInvestment = calculateCurrentInvestment(birthDateObj);
+
+    const lastDataRow = spData[spData.length - 1];
+    const [lastDay, lastMonth, lastYear] = lastDataRow.Month.split('/');
+    const lastDate = new Date(parseInt(lastYear), parseInt(lastMonth) - 1, parseInt(lastDay));
+    
+    const ageInMilliseconds = lastDate - birthDateObj;
+    const currentAge = Math.floor(ageInMilliseconds / (1000 * 60 * 60 * 24 * 365.25));
+
+    const baseResults = {
+      ...currentInvestment,
+      investmentData: currentInvestment.investmentData.map(item => ({
+        ...item,
+        value: Math.round(item.value),
+        invested: Math.round(item.invested)
+      }))
+    };
+
+    if (retirementAge > currentAge) {
+      const yearsToRetirement = retirementAge - currentAge;
+      
+      const futureValues = {
+        scenario1: calculateFutureValue(currentInvestment.currentValue, yearsToRetirement, 0.0927),
+        scenario2: calculateFutureValue(currentInvestment.currentValue, yearsToRetirement, 0.1243),
+        scenario3: calculateFutureValue(currentInvestment.currentValue, yearsToRetirement, 0.149)
+      };
+
+      setResults({
+        ...baseResults,
+        yearsToRetirement,
+        monthsToRetirement: 0,
+        futureValues
+      });
+    } else {
+      setResults(baseResults);
+    }
+  };
+
+  const handleDateChange = (field, value) => {
+    setBirthDate(prev => ({
+      ...prev,
+      [field]: value
+    }));
   };
 
   const formatCurrency = (value) => {
@@ -220,10 +362,7 @@ return (
                   type="number"
                   className="w-full border-2 border-gray-200 rounded-lg px-4 py-2"
                   value={retirementAge}
-                  onChange={(e) => {
-                    setRetirementAge(Number(e.target.value));
-                    setTimeout(calculateInvestment, 0);
-                  }}
+                  onChange={(e) => setRetirementAge(Number(e.target.value))}
                   min="0"
                   max="120"
                 />
@@ -331,9 +470,7 @@ return (
 
                 <Card className="shadow-md hover:shadow-lg transition-shadow">
                   <CardHeader>
-                    <CardTitle className="text-center">
-                      התפתחות ההשקעה לאורך זמן
-                    </CardTitle>
+                    <CardTitle className="text-center">התפתחות ההשקעה לאורך זמן</CardTitle>
                   </CardHeader>
                   <CardContent className="p-6">
                     <div className="h-96">
@@ -383,3 +520,6 @@ return (
 };
 
 export default InvestmentCalculator;
+
+
+
