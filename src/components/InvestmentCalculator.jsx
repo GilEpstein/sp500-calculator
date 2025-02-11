@@ -22,7 +22,7 @@ const InvestmentCalculator = () => {
   useEffect(() => {
     const loadData = async () => {
       try {
-        const response = await window.fs.readFile('sp500-calculator/data/sp500_data.csv');
+        const response = await window.fs.readFile('sp500_data.csv');
         const text = new TextDecoder().decode(response);
         Papa.parse(text, {
           header: true,
@@ -131,8 +131,12 @@ const InvestmentCalculator = () => {
     const [lastDay, lastMonth, lastYear] = lastDataRow.Month.split('/');
     const lastDate = new Date(parseInt(lastYear), parseInt(lastMonth) - 1, parseInt(lastDay));
     
+    // חישוב גיל מדויק כולל חודשים
     const ageInMilliseconds = lastDate - birthDateObj;
-    const currentAge = Math.floor(ageInMilliseconds / (1000 * 60 * 60 * 24 * 365.25));
+    const totalMonths = Math.floor(ageInMilliseconds / (1000 * 60 * 60 * 24 * 30.4375));
+    const currentAge = totalMonths / 12;
+    const currentAgeYears = Math.floor(currentAge);
+    const currentAgeMonths = Math.floor((currentAge - currentAgeYears) * 12);
 
     const baseResults = {
       ...currentInvestment,
@@ -143,19 +147,21 @@ const InvestmentCalculator = () => {
       }))
     };
 
-    if (retirementAge > currentAge) {
-      const yearsToRetirement = retirementAge - currentAge;
+    if (retirementAge > currentAgeYears) {
+      const yearsToRetirement = retirementAge - currentAgeYears;
+      const monthsToRetirement = 12 - currentAgeMonths;
+      const totalYearsToRetirement = yearsToRetirement + (monthsToRetirement / 12);
       
       const futureValues = {
-        scenario1: calculateFutureValue(currentInvestment.currentValue, yearsToRetirement, 0.0927),
-        scenario2: calculateFutureValue(currentInvestment.currentValue, yearsToRetirement, 0.1243),
-        scenario3: calculateFutureValue(currentInvestment.currentValue, yearsToRetirement, 0.149)
+        scenario1: calculateFutureValue(currentInvestment.currentValue, totalYearsToRetirement, 0.0927),
+        scenario2: calculateFutureValue(currentInvestment.currentValue, totalYearsToRetirement, 0.1243),
+        scenario3: calculateFutureValue(currentInvestment.currentValue, totalYearsToRetirement, 0.149)
       };
 
       setResults({
         ...baseResults,
         yearsToRetirement,
-        monthsToRetirement: 0,
+        monthsToRetirement,
         futureValues
       });
     } else {
@@ -190,7 +196,7 @@ const InvestmentCalculator = () => {
       [field]: value
     }));
   };
-  return (
+return (
     <div className="p-4 md:p-6 max-w-5xl mx-auto bg-gradient-to-b from-blue-50 to-white min-h-screen" dir="rtl">
       <Card className="shadow-xl border-none rounded-2xl overflow-hidden">
         <CardHeader className="bg-gradient-to-r from-blue-600 to-blue-400 text-white p-6">
@@ -283,7 +289,7 @@ const InvestmentCalculator = () => {
                       <div className="text-xl font-semibold text-gray-800 mb-2">
                         תחזית לגיל {retirementAge}
                         {results.yearsToRetirement > 0 ? 
-                          ` (בעוד ${results.yearsToRetirement} שנים)` : ''
+                          ` (בעוד ${results.yearsToRetirement} שנים ו-${results.monthsToRetirement} חודשים)` : ''
                         }
                       </div>
                       <div className="text-sm text-gray-600">
