@@ -5,7 +5,7 @@ import Papa from 'papaparse';
 import { Calendar } from 'lucide-react';
 
 const InvestmentCalculator = () => {
-  // === Part 1: State and Basic Setup ===
+  // State definitions
   const [birthDate, setBirthDate] = useState({ day: '26', month: '12', year: '1964' });
   const [spData, setSpData] = useState([]);
   const [results, setResults] = useState(null);
@@ -13,6 +13,7 @@ const InvestmentCalculator = () => {
   const [dataLoaded, setDataLoaded] = useState(false);
   const [error, setError] = useState(null);
 
+  // Date validation helper
   const isValidDate = (day, month, year) => {
     if (!day || !month || !year) return false;
     const date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
@@ -21,11 +22,16 @@ const InvestmentCalculator = () => {
            date.getFullYear() === parseInt(year);
   };
 
+  // Updated data loading effect using fetch
   useEffect(() => {
     const loadData = async () => {
       try {
-        const response = await window.fs.readFile('sp500_data.csv', { encoding: 'utf8' });
-        Papa.parse(response, {
+        const response = await fetch('/data/sp500_data.csv');
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const text = await response.text();
+        Papa.parse(text, {
           header: true,
           dynamicTyping: true,
           skipEmptyLines: true,
@@ -52,35 +58,7 @@ const InvestmentCalculator = () => {
     }
   }, [birthDate, dataLoaded, retirementAge]);
 
-  const handleDateInput = (value) => {
-    const datePattern = /^(\d{1,2})[/]?(\d{1,2})?[/]?(\d{0,4})?$/;
-    const match = value.match(datePattern);
-    
-    if (match) {
-      const [_, day, month, year] = match;
-      if (day) handleDateChange('day', day);
-      if (month) handleDateChange('month', month);
-      if (year) handleDateChange('year', year);
-    }
-  };
-
-  const handleDateChange = (field, value) => {
-    setBirthDate(prev => ({
-      ...prev,
-      [field]: value
-    }));
-  };
-
-  const formatCurrency = (value) => {
-    return new Intl.NumberFormat('he-IL', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0
-    }).format(Math.round(value));
-  };
-
-  // === Part 2: Business Logic ===
+  // Business Logic Functions
   const calculateFutureValue = (presentValue, years, annualReturn) => {
     return presentValue * Math.pow(1 + annualReturn, years);
   };
@@ -142,6 +120,7 @@ const InvestmentCalculator = () => {
       latestDate: lastDataRow.Month
     };
   };
+  // המשך מהחלק הראשון...
 
   const calculateInvestment = () => {
     if (!isValidDate(birthDate.day, birthDate.month, birthDate.year) || !spData.length) {
@@ -198,7 +177,34 @@ const InvestmentCalculator = () => {
     }
   };
 
-  // === Part 3: UI Rendering ===
+  const handleDateInput = (value) => {
+    const datePattern = /^(\d{1,2})[/]?(\d{1,2})?[/]?(\d{0,4})?$/;
+    const match = value.match(datePattern);
+    
+    if (match) {
+      const [_, day, month, year] = match;
+      if (day) handleDateChange('day', day);
+      if (month) handleDateChange('month', month);
+      if (year) handleDateChange('year', year);
+    }
+  };
+
+  const handleDateChange = (field, value) => {
+    setBirthDate(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  const formatCurrency = (value) => {
+    return new Intl.NumberFormat('he-IL', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
+    }).format(Math.round(value));
+  };
+
   return (
     <div className="p-4 md:p-6 max-w-5xl mx-auto bg-gradient-to-b from-blue-50 to-white min-h-screen" dir="rtl">
       <Card className="shadow-xl border-none rounded-2xl overflow-hidden">
@@ -343,7 +349,6 @@ const InvestmentCalculator = () => {
                   </div>
                 )}
 
-                {/* Chart Section */}
                 <Card className="shadow-md">
                   <CardHeader>
                     <CardTitle className="text-center">התפתחות ההשקעה לאורך זמן</CardTitle>
