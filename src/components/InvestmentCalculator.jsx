@@ -22,8 +22,12 @@ const InvestmentCalculator = () => {
   useEffect(() => {
     const loadData = async () => {
       try {
-        const response = await window.fs.readFile('uploaded_file test 26121964.csv', { encoding: 'utf8' });
-        Papa.parse(response, {
+        const response = await fetch('/data/sp500_data.csv');
+        if (!response.ok) {
+          throw new Error('Failed to load data');
+        }
+        const csvText = await response.text();
+        Papa.parse(csvText, {
           header: true,
           dynamicTyping: true,
           skipEmptyLines: true,
@@ -63,7 +67,7 @@ const InvestmentCalculator = () => {
         latestDate: null
       };
     }
-const lastDataRow = spData[spData.length - 1];
+    const lastDataRow = spData[spData.length - 1];
     const [lastDay, lastMonth, lastYear] = lastDataRow.Month.split('/');
     const lastDate = new Date(parseInt(lastYear), parseInt(lastMonth) - 1, parseInt(lastDay));
     
