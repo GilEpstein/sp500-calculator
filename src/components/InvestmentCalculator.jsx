@@ -22,7 +22,7 @@ const InvestmentCalculator = () => {
   useEffect(() => {
     const loadData = async () => {
       try {
-        const response = await fetch('/data/sp500_data.csv');
+        const response = await fetch('/sp500-calculator/data/sp500_data.csv');
         if (!response.ok) {
           throw new Error('Failed to load data');
         }
@@ -180,7 +180,7 @@ const InvestmentCalculator = () => {
       maximumFractionDigits: 0
     }).format(Math.round(value));
   };
-return (
+  return (
     <div className="p-6 max-w-5xl mx-auto bg-gradient-to-b from-blue-50 to-white" dir="rtl">
       <Card className="shadow-xl border-none rounded-2xl overflow-hidden">
         <CardHeader className="bg-gradient-to-r from-blue-600 to-blue-400 text-white p-6">
