@@ -1,4 +1,170 @@
-const formatCurrency = (value) => {
+import React, { useState, useEffect } from 'react';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import Papa from 'papaparse';
+import { Calendar } from 'lucide-react';
+
+const InvestmentCalculator = () => {
+  const [birthDate, setBirthDate] = useState({ day: '26', month: '12', year: '1964' });
+  const [spData, setSpData] = useState([]);
+  const [results, setResults] = useState(null);
+  const [retirementAge, setRetirementAge] = useState(0);
+  const [dataLoaded, setDataLoaded] = useState(false);
+  const [error, setError] = useState(null);
+
+  const isValidDate = (day, month, year) => {
+    if (!day || !month || !year) return false;
+    const date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+    return date.getDate() === parseInt(day) &&
+           date.getMonth() === parseInt(month) - 1 &&
+           date.getFullYear() === parseInt(year);
+  };
+
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const response = await window.fs.readFile('sp500-calculator/data/sp500_data.csv');
+        const text = new TextDecoder().decode(response);
+        Papa.parse(text, {
+          header: true,
+          dynamicTyping: true,
+          skipEmptyLines: true,
+          complete: (results) => {
+            setSpData(results.data);
+            setDataLoaded(true);
+          },
+          error: (error) => {
+            console.error('Parse error:', error);
+            setError('Error parsing CSV: ' + error.message);
+          }
+        });
+      } catch (error) {
+        console.error('Load error:', error);
+        setError('Error loading data: ' + error.message);
+      }
+    };
+    loadData();
+  }, []);
+
+  useEffect(() => {
+    if (dataLoaded && birthDate.day && birthDate.month && birthDate.year) {
+      calculateInvestment();
+    }
+  }, [birthDate, dataLoaded, retirementAge]);
+
+  const calculateFutureValue = (presentValue, years, annualReturn) => {
+    return presentValue * Math.pow(1 + annualReturn, years);
+  };
+
+  const calculateCurrentInvestment = (birthDateObj) => {
+    if (!birthDateObj || isNaN(birthDateObj.getTime())) {
+      return {
+        totalInvested: 0,
+        currentValue: 0,
+        investmentData: [],
+        latestDate: null
+      };
+    }
+
+    const lastDataRow = spData[spData.length - 1];
+    const [lastDay, lastMonth, lastYear] = lastDataRow.Month.split('/');
+    const lastDate = new Date(parseInt(lastYear), parseInt(lastMonth) - 1, parseInt(lastDay));
+    
+    if (birthDateObj > lastDate) {
+      return {
+        totalInvested: 0,
+        currentValue: 0,
+        investmentData: [],
+        latestDate: lastDataRow.Month
+      };
+    }
+
+    const monthlyInvestment = 100;
+    let units = 0;
+    let totalMonths = 0;
+    const investmentData = [];
+
+    for (const row of spData) {
+      if (!row.Month || !row.Closing) continue;
+      
+      const [day, month, year] = row.Month.split('/');
+      const monthDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+      
+      if (monthDate >= birthDateObj && monthDate <= lastDate) {
+        totalMonths++;
+        const newUnits = monthlyInvestment / row.Closing;
+        units += newUnits;
+        
+        investmentData.push({
+          date: `${year}-${month}`,
+          value: units * row.Closing,
+          invested: monthlyInvestment * totalMonths
+        });
+      }
+    }
+
+    const currentValue = units * lastDataRow.Closing;
+    const totalInvested = totalMonths * monthlyInvestment;
+
+    return {
+      totalInvested,
+      currentValue,
+      investmentData,
+      latestDate: lastDataRow.Month
+    };
+  };
+
+  const calculateInvestment = () => {
+    if (!isValidDate(birthDate.day, birthDate.month, birthDate.year) || !spData.length) {
+      setResults(null);
+      return;
+    }
+
+    const birthDateObj = new Date(
+      parseInt(birthDate.year),
+      parseInt(birthDate.month) - 1,
+      parseInt(birthDate.day)
+    );
+
+    const currentInvestment = calculateCurrentInvestment(birthDateObj);
+
+    const lastDataRow = spData[spData.length - 1];
+    const [lastDay, lastMonth, lastYear] = lastDataRow.Month.split('/');
+    const lastDate = new Date(parseInt(lastYear), parseInt(lastMonth) - 1, parseInt(lastDay));
+    
+    const ageInMilliseconds = lastDate - birthDateObj;
+    const currentAge = Math.floor(ageInMilliseconds / (1000 * 60 * 60 * 24 * 365.25));
+
+    const baseResults = {
+      ...currentInvestment,
+      investmentData: currentInvestment.investmentData.map(item => ({
+        ...item,
+        value: Math.round(item.value),
+        invested: Math.round(item.invested)
+      }))
+    };
+
+    if (retirementAge > currentAge) {
+      const yearsToRetirement = retirementAge - currentAge;
+      
+      const futureValues = {
+        scenario1: calculateFutureValue(currentInvestment.currentValue, yearsToRetirement, 0.0927),
+        scenario2: calculateFutureValue(currentInvestment.currentValue, yearsToRetirement, 0.1243),
+        scenario3: calculateFutureValue(currentInvestment.currentValue, yearsToRetirement, 0.149)
+      };
+
+      setResults({
+        ...baseResults,
+        yearsToRetirement,
+        monthsToRetirement: 0,
+        futureValues
+      });
+    } else {
+      setResults(baseResults);
+    }
+  };
+
+  const formatCurrency = (value) => {
     return new Intl.NumberFormat('he-IL', {
       style: 'currency',
       currency: 'USD',
@@ -25,15 +191,6 @@ const formatCurrency = (value) => {
       [field]: value
     }));
   };
-
-  return (
-    <div>
-      {/* חלק התצוגה יבוא כאן */}
-    </div>
-  );
-};
-
-export default InvestmentCalculator;
 return (
   <div className="p-4 md:p-6 max-w-5xl mx-auto bg-gradient-to-b from-blue-50 to-white min-h-screen" dir="rtl">
     <Card className="shadow-xl border-none rounded-2xl overflow-hidden">
@@ -234,3 +391,4 @@ return (
     </Card>
   </div>
 );
+  export default InvestmentCalculator;  
