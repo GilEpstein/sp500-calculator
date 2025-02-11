@@ -191,7 +191,7 @@ const InvestmentCalculator = () => {
       [field]: value
     }));
   };
-return (
+  return (
   <div className="p-4 md:p-6 max-w-5xl mx-auto bg-gradient-to-b from-blue-50 to-white min-h-screen" dir="rtl">
     <Card className="shadow-xl border-none rounded-2xl overflow-hidden">
       <CardHeader className="bg-gradient-to-r from-blue-600 to-blue-400 text-white p-6">
@@ -391,4 +391,4 @@ return (
     </Card>
   </div>
 );
-  export default InvestmentCalculator;  
+export default InvestmentCalculator;  
