@@ -53,8 +53,7 @@ const InvestmentCalculator = () => {
       calculateInvestment();
     }
   }, [birthDate, dataLoaded, retirementAge]);
-
-  const calculateFutureValue = (presentValue, years, annualReturn) => {
+const calculateFutureValue = (presentValue, years, annualReturn) => {
     return presentValue * Math.pow(1 + annualReturn, years);
   };
 
@@ -198,50 +197,62 @@ const InvestmentCalculator = () => {
         
         <CardContent className="p-8">
           <div className="space-y-8">
-            <div className="grid grid-cols-4 gap-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">יום</label>
-                <input
-                  type="number"
-                  className="w-full border-2 border-gray-200 rounded-lg px-4 py-2"
-                  min="1"
-                  max="31"
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-6">
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700">יום</label>
+                <select
+                  className="w-full border-2 border-gray-200 rounded-lg px-3 py-2 bg-white"
                   value={birthDate.day}
                   onChange={(e) => handleDateChange('day', e.target.value)}
-                />
+                >
+                  {[...Array(31)].map((_, i) => (
+                    <option key={i + 1} value={i + 1}>
+                      {i + 1}
+                    </option>
+                  ))}
+                </select>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">חודש</label>
-                <input
-                  type="number"
-                  className="w-full border-2 border-gray-200 rounded-lg px-4 py-2"
-                  min="1"
-                  max="12"
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700">חודש</label>
+                <select
+                  className="w-full border-2 border-gray-200 rounded-lg px-3 py-2 bg-white"
                   value={birthDate.month}
                   onChange={(e) => handleDateChange('month', e.target.value)}
-                />
+                >
+                  {[...Array(12)].map((_, i) => (
+                    <option key={i + 1} value={i + 1}>
+                      {i + 1}
+                    </option>
+                  ))}
+                </select>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">שנה</label>
-                <input
-                  type="number"
-                  className="w-full border-2 border-gray-200 rounded-lg px-4 py-2"
-                  min="1930"
-                  max="2024"
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700">שנה</label>
+                <select
+                  className="w-full border-2 border-gray-200 rounded-lg px-3 py-2 bg-white"
                   value={birthDate.year}
                   onChange={(e) => handleDateChange('year', e.target.value)}
-                />
+                >
+                  {[...Array(95)].map((_, i) => (
+                    <option key={1930 + i} value={1930 + i}>
+                      {1930 + i}
+                    </option>
+                  ))}
+                </select>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">גיל פרישה</label>
-                <input
-                  type="number"
-                  className="w-full border-2 border-gray-200 rounded-lg px-4 py-2"
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700">גיל פרישה</label>
+                <select
+                  className="w-full border-2 border-gray-200 rounded-lg px-3 py-2 bg-white"
                   value={retirementAge}
                   onChange={(e) => setRetirementAge(Number(e.target.value))}
-                  min="0"
-                  max="120"
-                />
+                >
+                  {[...Array(101)].map((_, i) => (
+                    <option key={i} value={i}>
+                      {i}
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
 
@@ -396,3 +407,4 @@ const InvestmentCalculator = () => {
 };
 
 export default InvestmentCalculator;
+  
