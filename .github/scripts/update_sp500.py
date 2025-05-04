@@ -12,7 +12,7 @@ last = hist.tail(1).iloc[0]
 closing = round(last["Close"], 2)
 date = last.name.strftime("%d/%m/%Y")
 
-csv_path = "public/sp500-calculator/data/sp500_data.csv"
+csv_path = "public/data/sp500_data.csv"
 df = pd.read_csv(csv_path)
 
 if not df['Month'].astype(str).str.contains(date).any():
