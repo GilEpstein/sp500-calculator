@@ -193,6 +193,25 @@ const calculateFutureValue = (presentValue, years, annualReturn) => {
             מבוסס על נתוני מדד S&P500
           </p>
           <p className="text-sm opacity-90 text-center" dir="rtl">@פרופ' גיל</p>
+  <div className="flex justify-center gap-4 mt-4 flex-wrap">
+    <a
+      href="https://chat.whatsapp.com/Eiji0CIWupSLZBPjXQf8MI"
+      target="_blank"
+      rel="noopener noreferrer"
+      className="bg-green-500 text-white px-4 py-2 rounded-full hover:bg-green-600 transition text-sm"
+    >
+      הצטרף לקבוצת הווטסאפ
+    </a>
+    <a
+      href="https://gilepstein.github.io/prof-gil-website/"
+      target="_blank"
+      rel="noopener noreferrer"
+      className="bg-indigo-600 text-white px-4 py-2 rounded-full hover:bg-indigo-700 transition text-sm"
+    >
+      בקר באתר שלי
+    </a>
+  </div>
+
         </CardHeader>
         
         <CardContent className="p-8">
@@ -408,3 +427,10 @@ const calculateFutureValue = (presentValue, years, annualReturn) => {
 
 export default InvestmentCalculator;
   
+
+
+<footer className="text-center text-base text-red-600 font-semibold mt-10 mb-6 px-6">
+  ⚠️ הבהרה: המידע באתר מיועד ללימוד בלבד ואינו מהווה הצעה לקנייה או מכירה של מוצרים פיננסיים.
+  איני יועץ השקעות מוסמך, והמידע אינו מחליף ייעוץ מותאם אישית.
+  החלטות השקעה על אחריותכם בלבד. ייתכן שאני מחזיק בחלק מהמניות או המדדים המוזכרים.
+</footer>
